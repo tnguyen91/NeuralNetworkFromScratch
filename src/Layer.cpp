@@ -4,7 +4,7 @@
 #include <numeric>
 
 Layer::Layer(int inputSize, int outputSize)
-    : inputSize(inputSize), outputSize(outputSize), learningRate(0.01) {
+    : inputSize(inputSize), outputSize(outputSize) {
     
     activation = [](double x) { return ActivationFunctions::sigmoid(x); };
     activationDerivative = [](double x) { return ActivationFunctions::sigmoidDerivative(x); };
@@ -25,8 +25,8 @@ Layer::Layer(int inputSize, int outputSize)
 }
 
 Layer::Layer(int inputSize, int outputSize, std::function<double(double)> activation,
-             std::function<double(double)> activationDerivative, double learningRate)
-    : inputSize(inputSize), outputSize(outputSize), activation(activation), activationDerivative(activationDerivative), learningRate(learningRate) {
+             std::function<double(double)> activationDerivative)
+    : inputSize(inputSize), outputSize(outputSize), activation(activation), activationDerivative(activationDerivative) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(-1.0, 1.0);
@@ -52,7 +52,7 @@ std::vector<double> Layer::forward(const std::vector<double>& inputs) {
     return outputs;
 }
 
-std::vector<double> Layer::backward(const std::vector<double>& gradients) {
+std::vector<double> Layer::backward(const std::vector<double>& gradients, double learningRate) {
     std::vector<double> inputGradients(inputSize, 0.0);
     for (int i = 0; i < outputSize; ++i) {
         double delta = gradients[i] * activationDerivative(outputs[i]);
@@ -95,8 +95,4 @@ void Layer::updateWeights(int inputIndex, int outputIndex, double value) {
 
 void Layer::updateBiases(int outputIndex, double value) {
     biases[outputIndex] += value;
-}
-
-void Layer::setLearningRate(double newLearningRate) {
-    learningRate = newLearningRate;
 }
