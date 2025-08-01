@@ -5,9 +5,11 @@
 
 namespace LossFunction {
 
-    // Mean Squared Error (MSE)
     double meanSquaredError(const std::vector<double>& predicted, const std::vector<double>& actual);
+    std::vector<double> meanSquaredErrorDerivative(const std::vector<double>& predicted, const std::vector<double>& actual);
+    double crossEntropy(const std::vector<double>& predicted, const std::vector<double>& actual);
+    std::vector<double> crossEntropyDerivative(const std::vector<double>& predicted, const std::vector<double>& actual);
 
-} // namespace LossFunction
+}
 
-#endif // LOSS_FUNCTION_H
+#endif
