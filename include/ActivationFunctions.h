@@ -6,14 +6,16 @@
 
 namespace ActivationFunctions {
 
-    // Sigmoid activation function
     double sigmoid(double x);
     std::vector<double> sigmoid(const std::vector<double>& x);
 
-    // ReLU activation function
+    double sigmoidDerivative(double x);
+
     double relu(double x);
     std::vector<double> relu(const std::vector<double>& x);
 
-} // namespace ActivationFunctions
+    double reluDerivative(double x);
 
-#endif // ACTIVATION_FUNCTIONS_H
+}
+
+#endif 
