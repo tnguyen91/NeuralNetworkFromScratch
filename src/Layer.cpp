@@ -6,30 +6,30 @@
 Layer::Layer(int inputSize, int outputSize)
     : inputSize(inputSize), outputSize(outputSize) {
     
-    activation = [](double x) { return ActivationFunctions::sigmoid(x); };
-    activationDerivative = [](double x) { return ActivationFunctions::sigmoidDerivative(x); };
+    activation = [](double x) { 
+        return ActivationFunctions::sigmoid(x); 
+    };
+    activationDerivative = [](double x) { 
+        return ActivationFunctions::sigmoidDerivative(x); 
+    };
     
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(-1.0, 1.0);
-
-    weights.resize(outputSize, std::vector<double>(inputSize));
-    biases.resize(outputSize);
-
-    for (int i = 0; i < outputSize; ++i) {
-        for (int j = 0; j < inputSize; ++j) {
-            weights[i][j] = dis(gen);
-        }
-        biases[i] = dis(gen);
-    }
+    initializeWeights();
 }
 
-Layer::Layer(int inputSize, int outputSize, std::function<double(double)> activation,
+Layer::Layer(int inputSize, int outputSize, 
+             std::function<double(double)> activation,
              std::function<double(double)> activationDerivative)
-    : inputSize(inputSize), outputSize(outputSize), activation(activation), activationDerivative(activationDerivative) {
+    : inputSize(inputSize), outputSize(outputSize), 
+      activation(activation), activationDerivative(activationDerivative) {
+    
+    initializeWeights();
+}
+
+void Layer::initializeWeights() {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(-1.0, 1.0);
+    double limit = std::sqrt(2.0 / (inputSize + outputSize)) * 0.5;
+    std::uniform_real_distribution<> dis(-limit, limit);
 
     weights.resize(outputSize, std::vector<double>(inputSize));
     biases.resize(outputSize);
@@ -46,8 +46,11 @@ std::vector<double> Layer::forward(const std::vector<double>& inputs) {
     this->inputs = inputs;
     outputs.resize(outputSize);
     for (int i = 0; i < outputSize; ++i) {
-        outputs[i] = std::inner_product(inputs.begin(), inputs.end(), weights[i].begin(), biases[i]);
-        outputs[i] = activation(outputs[i]);
+        double sum = biases[i];
+        for (int j = 0; j < inputSize; ++j) {
+            sum += weights[i][j] * inputs[j];
+        }
+        outputs[i] = activation(sum);
     }
     return outputs;
 }
@@ -55,12 +58,16 @@ std::vector<double> Layer::forward(const std::vector<double>& inputs) {
 std::vector<double> Layer::backward(const std::vector<double>& gradients, double learningRate) {
     std::vector<double> inputGradients(inputSize, 0.0);
     for (int i = 0; i < outputSize; ++i) {
-        double delta = gradients[i] * activationDerivative(outputs[i]);
+        double activationGrad = activationDerivative(outputs[i]);
+        double delta = gradients[i] * activationGrad;
+        
+        biases[i] -= learningRate * delta;
+        
         for (int j = 0; j < inputSize; ++j) {
-            inputGradients[j] += delta * weights[i][j];
+            inputGradients[j] += weights[i][j] * delta;
+            
             weights[i][j] -= learningRate * delta * inputs[j];
         }
-        biases[i] -= learningRate * delta;
     }
     return inputGradients;
 }
@@ -79,14 +86,6 @@ const std::vector<std::vector<double>>& Layer::getWeights() const {
 
 const std::vector<double>& Layer::getBiases() const {
     return biases;
-}
-
-const std::vector<std::vector<double>>& Layer::getWeightGradients() const {
-    return weightGradients;
-}
-
-const std::vector<double>& Layer::getBiasGradients() const {
-    return biasGradients;
 }
 
 void Layer::updateWeights(int inputIndex, int outputIndex, double value) {
