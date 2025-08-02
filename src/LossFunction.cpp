@@ -31,7 +31,7 @@ namespace LossFunction {
     std::vector<double> crossEntropyDerivative(const std::vector<double>& predicted, const std::vector<double>& actual) {
         std::vector<double> derivative(predicted.size());
         for (size_t i = 0; i < predicted.size(); ++i) {
-            derivative[i] = -actual[i] / (predicted[i] + 1e-15); 
+            derivative[i] = predicted[i] - actual[i];
         }
         return derivative;
     }
