@@ -25,16 +25,17 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
                 output = layer->forward(output);
             }
 
-            totalLoss += LossFunction::meanSquaredError(output, targets[i]);
-
-            std::vector<double> gradients = LossFunction::meanSquaredErrorDerivative(output, targets[i]);
+            totalLoss += LossFunction::crossEntropy(output, targets[i]);
+            std::vector<double> gradients = LossFunction::crossEntropyDerivative(output, targets[i]);
 
             for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
                 gradients = (*it)->backward(gradients, learningRate);
             }
         }
 
-        std::cout << "Epoch " << epoch + 1 << ", Loss: " << totalLoss / inputs.size() << std::endl;
+        if (epoch % 100 == 0) {
+            std::cout << "Epoch " << epoch << ", Loss: " << totalLoss / inputs.size() << std::endl;
+        }
     }
 }
 
@@ -54,10 +55,11 @@ double NeuralNetwork::evaluate(const std::vector<std::vector<double>>& inputs,
                                 const std::vector<std::vector<double>>& targets) {
     int correct = 0;
     for (size_t i = 0; i < inputs.size(); ++i) {
-        auto output = predict(inputs[i]);
-        size_t predicted = std::distance(output.begin(), std::max_element(output.begin(), output.end()));
-        size_t actual = std::distance(targets[i].begin(), std::max_element(targets[i].begin(), targets[i].end()));
-        if (predicted == actual) {
+        std::vector<double> prediction = predict(inputs[i]);
+        std::cout << "Input: [" << inputs[i][0] << ", " << inputs[i][1] << "] -> Prediction: [" << prediction[0]
+                  << "], Target: [" << targets[i][0] << "]" << std::endl;
+        if ((prediction[0] >= 0.5 && targets[i][0] == 1.0) ||
+            (prediction[0] < 0.5 && targets[i][0] == 0.0)) {
             ++correct;
         }
     }
