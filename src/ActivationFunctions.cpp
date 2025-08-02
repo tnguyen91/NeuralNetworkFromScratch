@@ -26,13 +26,17 @@ namespace ActivationFunctions {
         return result;
     }
 
-    double sigmoidDerivative(double x) {
+    double sigmoidDerivativeFromInput(double x) {
         double sig = sigmoid(x);
         return sig * (1 - sig);
     }
 
+    double sigmoidDerivative(double sigmoid_output) {
+        return sigmoid_output * (1.0 - sigmoid_output);
+    }
+
     double reluDerivative(double x) {
-        return x > 0 ? 1.0 : 0.0;
+        return x > 0.0 ? 1.0 : 0.0;
     }
 
 }
