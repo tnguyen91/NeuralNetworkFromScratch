@@ -32,7 +32,9 @@ void Layer::initializeWeights() {
     std::uniform_real_distribution<> dis(-limit, limit);
 
     weights.resize(outputSize, std::vector<double>(inputSize));
+    weightsGradients.resize(outputSize, std::vector<double>(inputSize, 0.0));
     biases.resize(outputSize);
+    biasGradients.resize(outputSize, 0.0);
 
     for (int i = 0; i < outputSize; ++i) {
         for (int j = 0; j < inputSize; ++j) {
@@ -55,19 +57,21 @@ std::vector<double> Layer::forward(const std::vector<double>& inputs) {
     return outputs;
 }
 
-std::vector<double> Layer::backward(const std::vector<double>& gradients, double learningRate) {
+std::vector<double> Layer::backward(const std::vector<double>& gradients) {
     std::vector<double> inputGradients(inputSize, 0.0);
     for (int i = 0; i < outputSize; ++i) {
         double activationGrad = activationDerivative(outputs[i]);
         double delta = gradients[i] * activationGrad;
-        
-        biases[i] -= learningRate * delta;
-        
+
         for (int j = 0; j < inputSize; ++j) {
             inputGradients[j] += weights[i][j] * delta;
-            
-            weights[i][j] -= learningRate * delta * inputs[j];
         }
+
+        for (int j = 0; j < inputSize; ++j) {
+            weightsGradients[i][j] = delta * inputs[j];
+        }
+
+        biasGradients[i] = delta;
     }
     return inputGradients;
 }
@@ -88,10 +92,10 @@ const std::vector<double>& Layer::getBiases() const {
     return biases;
 }
 
-void Layer::updateWeights(int inputIndex, int outputIndex, double value) {
-    weights[outputIndex][inputIndex] += value;
+const std::vector<std::vector<double>>& Layer::getWeightGradients() const {
+    return weightsGradients;
 }
 
-void Layer::updateBiases(int outputIndex, double value) {
-    biases[outputIndex] += value;
+const std::vector<double>& Layer::getBiasGradients() const {
+    return biasGradients;
 }

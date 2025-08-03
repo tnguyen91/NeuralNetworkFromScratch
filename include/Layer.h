@@ -12,22 +12,24 @@ public:
 
     std::vector<double> forward(const std::vector<double>& inputs);
 
-    std::vector<double> backward(const std::vector<double>& gradients, double learningRate);
+    std::vector<double> backward(const std::vector<double>& gradients);
 
     int getInputSize() const;
     int getOutputSize() const;
     const std::vector<std::vector<double>>& getWeights() const;
     const std::vector<double>& getBiases() const;
     
-    void updateWeights(int inputIndex, int outputIndex, double value);
-    void updateBiases(int outputIndex, double value);
+    const std::vector<std::vector<double>>& getWeightGradients() const;
+    const std::vector<double>& getBiasGradients() const;
 
 private:
     int inputSize;
     int outputSize;
     
     std::vector<std::vector<double>> weights;
+    std::vector<std::vector<double>> weightsGradients;
     std::vector<double> biases;
+    std::vector<double> biasGradients;
 
     std::vector<double> inputs; 
     std::vector<double> outputs;
