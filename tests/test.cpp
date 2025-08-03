@@ -128,7 +128,7 @@ void testXOR() {
     std::cout << "Testing XOR Neural Network..." << std::endl;
 
     std::vector<int> layerSizes = {2, 8, 1};
-    NeuralNetwork nn(layerSizes);
+    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy");
     
     std::vector<std::vector<double>> inputs = {
         {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}

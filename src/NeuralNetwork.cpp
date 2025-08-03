@@ -5,10 +5,43 @@
 NeuralNetwork::NeuralNetwork() {
 }
 
-NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes) {
-    for (size_t i = 1; i < layerSizes.size(); ++i) {
-        auto layer = std::make_unique<Layer>(layerSizes[i - 1], layerSizes[i]);
-        layers.push_back(std::move(layer));
+NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
+                             const std::string& activationFunction = "sigmoid",
+                             const std::string& lossFunction = "crossEntropy") {
+    if (activationFunction == "sigmoid") {
+        for (size_t i = 1; i < layerSizes.size(); ++i) {
+            layers.push_back(std::make_unique<Layer>(
+                layerSizes[i - 1], layerSizes[i],
+                [](double x) {
+                    return ActivationFunctions::sigmoid(x);
+                },
+                [](double sigmoid_output) {
+                    return ActivationFunctions::sigmoidDerivative(sigmoid_output);
+                }
+            ));
+        }
+    } else if (activationFunction == "relu") {
+        for (size_t i = 1; i < layerSizes.size(); ++i) {
+            layers.push_back(std::make_unique<Layer>(
+                layerSizes[i - 1], layerSizes[i],
+                [](double x) {
+                    return ActivationFunctions::relu(x);
+                },
+                [](double x) {
+                    return ActivationFunctions::reluDerivative(x);
+                }
+            ));
+        }
+    } else {
+        throw std::invalid_argument("Unsupported activation function: " + activationFunction);
+    }
+
+    if (lossFunction == "crossEntropy") {
+        this->lossFunction = LossFunction::crossEntropy;
+        this->lossDerivative = LossFunction::crossEntropyDerivative;
+    } else if (lossFunction == "meanSquaredError") {
+        this->lossFunction = LossFunction::meanSquaredError;
+        this->lossDerivative = LossFunction::meanSquaredErrorDerivative;
     }
 }
 
@@ -25,8 +58,8 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
                 output = layer->forward(output);
             }
 
-            totalLoss += LossFunction::crossEntropy(output, targets[i]);
-            std::vector<double> gradients = LossFunction::crossEntropyDerivative(output, targets[i]);
+            totalLoss += lossFunction(output, targets[i]);
+            std::vector<double> gradients = lossDerivative(output, targets[i]);
 
             for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
                 gradients = (*it)->backward(gradients, learningRate);

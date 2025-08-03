@@ -9,8 +9,10 @@
 class NeuralNetwork {
 public:
     NeuralNetwork();
-    
-    NeuralNetwork(const std::vector<int>& layerSizes);
+
+    NeuralNetwork(const std::vector<int>& layerSizes,
+                  const std::string& activationFunction,
+                  const std::string& lossFunction);
 
     void train(const std::vector<std::vector<double>>& inputs,
                const std::vector<std::vector<double>>& targets,
@@ -25,6 +27,8 @@ public:
 
 private:
     std::vector<std::unique_ptr<Layer>> layers;
+    std::function<double(const std::vector<double>&, const std::vector<double>&)> lossFunction;
+    std::function<std::vector<double>(const std::vector<double>&, const std::vector<double>&)> lossDerivative;
 };
 
 #endif
