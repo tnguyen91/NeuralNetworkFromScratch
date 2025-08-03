@@ -20,6 +20,7 @@ set(LIBRARY_SOURCES
     src/Layer.cpp
     src/LossFunction.cpp
     src/NeuralNetwork.cpp
+    src/SGD.cpp
 )
 
 add_library(NeuralNetworkLib STATIC ${LIBRARY_SOURCES})
