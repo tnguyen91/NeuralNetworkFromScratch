@@ -1,5 +1,6 @@
 #include "../include/NeuralNetwork.h"
 #include "../include/ActivationFunctions.h"
+#include "SGD.cpp"
 #include <iostream>
 
 NeuralNetwork::NeuralNetwork() {
@@ -7,7 +8,8 @@ NeuralNetwork::NeuralNetwork() {
 
 NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                              const std::string& activationFunction = "sigmoid",
-                             const std::string& lossFunction = "crossEntropy") {
+                             const std::string& lossFunction = "crossEntropy",
+                             const std::string& optimizer = "SGD") {
     if (activationFunction == "sigmoid") {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
             layers.push_back(std::make_unique<Layer>(
@@ -43,6 +45,12 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
         this->lossFunction = LossFunction::meanSquaredError;
         this->lossDerivative = LossFunction::meanSquaredErrorDerivative;
     }
+
+    if (optimizer == "SGD") {
+        this->optimizer = std::make_unique<SGD>();
+    } else {
+        throw std::invalid_argument("Unsupported optimizer: " + optimizer);
+    }
 }
 
 void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
@@ -62,7 +70,13 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
             std::vector<double> gradients = lossDerivative(output, targets[i]);
 
             for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
-                gradients = (*it)->backward(gradients, learningRate);
+                auto weightGradients = (*it)->computeWeightGradients(gradients);
+                optimizer->updateWeights((*it)->getWeights(), weightGradients, learningRate);
+
+                auto biasGradients = (*it)->computeBiasGradients(gradients);
+                optimizer->updateBiases((*it)->getBiases(), biasGradients, learningRate);
+
+                gradients = (*it)->backward(gradients);
             }
         }
 
