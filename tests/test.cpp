@@ -103,8 +103,7 @@ void testLayer() {
 
     std::cout << "Testing backward..." << std::endl;
     std::vector<double> gradients = {0.1, -0.05, 0.2};
-    double learningRate = 0.01;
-    std::vector<double> inputGradients = layer.backward(gradients, learningRate);
+    std::vector<double> inputGradients = layer.backward(gradients);
     std::cout << "Gradients: ";
     for (const auto& val : gradients) {
         std::cout << val << " ";
@@ -128,7 +127,7 @@ void testXOR() {
     std::cout << "Testing XOR Neural Network..." << std::endl;
 
     std::vector<int> layerSizes = {2, 8, 1};
-    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy");
+    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy", "SGD");
     
     std::vector<std::vector<double>> inputs = {
         {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}
