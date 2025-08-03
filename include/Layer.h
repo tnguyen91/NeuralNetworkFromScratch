@@ -14,10 +14,13 @@ public:
 
     std::vector<double> backward(const std::vector<double>& gradients);
 
+    std::vector<std::vector<double>> computeWeightGradients(const std::vector<double>& gradients);
+    std::vector<double> computeBiasGradients(const std::vector<double>& gradients);
+
     int getInputSize() const;
     int getOutputSize() const;
-    const std::vector<std::vector<double>>& getWeights() const;
-    const std::vector<double>& getBiases() const;
+    std::vector<std::vector<double>>& getWeights() ;
+    std::vector<double>& getBiases() ;
     
     const std::vector<std::vector<double>>& getWeightGradients() const;
     const std::vector<double>& getBiasGradients() const;

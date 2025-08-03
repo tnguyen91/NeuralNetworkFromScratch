@@ -76,6 +76,27 @@ std::vector<double> Layer::backward(const std::vector<double>& gradients) {
     return inputGradients;
 }
 
+std::vector<std::vector<double>> Layer::computeWeightGradients(const std::vector<double>& gradients) {
+    std::vector<std::vector<double>> weightGradients(outputSize, std::vector<double>(inputSize, 0.0));
+    for (int i = 0; i < outputSize; ++i) {
+        double activationGrad = activationDerivative(outputs[i]);
+        double delta = gradients[i] * activationGrad;
+        for (int j = 0; j < inputSize; ++j) {
+            weightGradients[i][j] = delta * inputs[j];
+        }
+    }
+    return weightGradients;
+}
+
+std::vector<double> Layer::computeBiasGradients(const std::vector<double>& gradients) {
+    std::vector<double> biasGradients(outputSize, 0.0);
+    for (int i = 0; i < outputSize; ++i) {
+        double activationGrad = activationDerivative(outputs[i]);
+        biasGradients[i] = gradients[i] * activationGrad;
+    }
+    return biasGradients;
+}
+
 int Layer::getInputSize() const {
     return inputSize;
 }
@@ -84,11 +105,11 @@ int Layer::getOutputSize() const {
     return outputSize;
 }
 
-const std::vector<std::vector<double>>& Layer::getWeights() const {
+std::vector<std::vector<double>>& Layer::getWeights() {
     return weights;
 }
 
-const std::vector<double>& Layer::getBiases() const {
+std::vector<double>& Layer::getBiases() {
     return biases;
 }
 
