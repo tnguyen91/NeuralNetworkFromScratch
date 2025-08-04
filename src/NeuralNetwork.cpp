@@ -1,6 +1,8 @@
 #include "../include/NeuralNetwork.h"
 #include "../include/ActivationFunctions.h"
-#include "SGD.cpp"
+#include "SGD.h"
+#include "Momentum.h"
+#include "Adam.h"
 #include <iostream>
 
 NeuralNetwork::NeuralNetwork() {
@@ -48,6 +50,10 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
 
     if (optimizer == "SGD") {
         this->optimizer = std::make_unique<SGD>();
+    } else if (optimizer == "Momentum") {
+        this->optimizer = std::make_unique<Momentum>(0.9);
+    } else if (optimizer == "Adam") {
+        this->optimizer = std::make_unique<Adam>(0.9, 0.999, 1e-8);
     } else {
         throw std::invalid_argument("Unsupported optimizer: " + optimizer);
     }
