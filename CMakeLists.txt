@@ -21,6 +21,8 @@ set(LIBRARY_SOURCES
     src/LossFunction.cpp
     src/NeuralNetwork.cpp
     src/SGD.cpp
+    src/Momentum.cpp
+    src/Adam.cpp
 )
 
 add_library(NeuralNetworkLib STATIC ${LIBRARY_SOURCES})
