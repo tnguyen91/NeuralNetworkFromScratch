@@ -15,7 +15,7 @@ public:
                   const std::string& activationFunction,
                   const std::string& lossFunction,
                   const std::string& optimizer,
-                  unsigned int seed);
+                  unsigned int seed = 0);
 
     void train(const std::vector<std::vector<double>>& inputs,
                const std::vector<std::vector<double>>& targets,
@@ -27,7 +27,7 @@ public:
 
     double evaluate(const std::vector<std::vector<double>>& inputs,
                     const std::vector<std::vector<double>>& targets,
-                    double tolerance);
+                    double tolerance = 0.01);
 
 private:
     std::vector<std::unique_ptr<Layer>> layers;

@@ -1,7 +1,7 @@
 #include "../include/Adam.h"
 #include <cmath>
 
-Adam::Adam(double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8)
+Adam::Adam(double beta1, double beta2, double epsilon)
     : beta1(beta1), beta2(beta2), epsilon(epsilon), timeStep(0) {}
 
 void Adam::updateWeights(std::vector<std::vector<double>>& weights,

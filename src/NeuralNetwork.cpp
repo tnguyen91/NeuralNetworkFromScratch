@@ -14,7 +14,7 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                              const std::string& activationFunction,
                              const std::string& lossFunction,
                              const std::string& optimizer,
-                             unsigned int seed = 0) {
+                             unsigned int seed) {
     if (activationFunction == "sigmoid") {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
             unsigned int layerSeed = (seed == 0) ? 0 : seed + i;
@@ -113,7 +113,7 @@ void NeuralNetwork::addLayer(std::unique_ptr<Layer> layer) {
 
 double NeuralNetwork::evaluate(const std::vector<std::vector<double>>& inputs,
                                 const std::vector<std::vector<double>>& targets,
-                                double tolerance = 0.01) {
+                                double tolerance) {
     int correctCount = 0;
     for (size_t i = 0; i < inputs.size(); ++i) {
         std::vector<double> output = predict(inputs[i]);

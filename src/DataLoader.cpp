@@ -160,7 +160,7 @@ void DataLoader::normalizeFeatures(std::vector<std::vector<double>>& data) {
     }
 }
 
-void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Dataset& testSet, double testRatio = 0.2, unsigned int seed = 0) {
+void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Dataset& testSet, double testRatio, unsigned int seed) {
     size_t totalSamples = dataset.inputs.size();
     size_t testSize = static_cast<size_t>(totalSamples * testRatio);
     size_t trainSize = totalSamples - testSize;
@@ -205,10 +205,10 @@ void DataLoader::trainValidationTestSplit(const Dataset& dataset,
                                          Dataset& trainSet,
                                          Dataset& validationSet,
                                          Dataset& testSet,
-                                         double trainRatio = 0.6,
-                                         double validationRatio = 0.2,
-                                         double testRatio = 0.2,
-                                         unsigned int seed = 0) {
+                                         double trainRatio,
+                                         double validationRatio,
+                                         double testRatio,
+                                         unsigned int seed) {
     if (std::abs(trainRatio + validationRatio + testRatio - 1.0) > 1e-6) {
         throw std::invalid_argument("Train, validation, and test ratios must sum to 1.0");
     }

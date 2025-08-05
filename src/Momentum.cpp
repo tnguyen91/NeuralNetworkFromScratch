@@ -1,6 +1,6 @@
 #include "../include/Momentum.h"
 
-Momentum::Momentum(double momentum = 0.9)
+Momentum::Momentum(double momentum)
     : momentum(momentum) {}
 
 void Momentum::updateWeights(std::vector<std::vector<double>>& weights,

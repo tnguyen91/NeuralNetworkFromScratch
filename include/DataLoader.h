@@ -24,8 +24,8 @@ public:
     static void trainTestSplit(const Dataset& dataset, 
                               Dataset& trainSet, 
                               Dataset& testSet, 
-                              double testRatio,
-                              unsigned int seed);
+                              double testRatio = 0.2,
+                              unsigned int seed = 0);
     
     static void trainValidationTestSplit(const Dataset& dataset,
                                        Dataset& trainSet,
@@ -33,8 +33,8 @@ public:
                                        Dataset& testSet,
                                        double trainRatio,
                                        double validationRatio,
-                                       double testRatio,
-                                       unsigned int seed);
+                                       double testRatio = 0.2,
+                                       unsigned int seed = 0);
     
     static std::vector<std::vector<double>> oneHotEncode(const std::vector<int>& labels, int numClasses);
 

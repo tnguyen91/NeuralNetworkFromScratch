@@ -5,7 +5,7 @@
 
 class Adam : public Optimizer {
 public:
-    Adam(double beta1, double beta2, double epsilon);
+    Adam(double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
 
     void updateWeights(std::vector<std::vector<double>>& weights,
                        const std::vector<std::vector<double>>& weightGradients,

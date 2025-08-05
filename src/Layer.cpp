@@ -3,7 +3,7 @@
 #include <random>
 #include <numeric>
 
-Layer::Layer(int inputSize, int outputSize, unsigned int seed = 0)
+Layer::Layer(int inputSize, int outputSize, unsigned int seed)
     : inputSize(inputSize), outputSize(outputSize) {
     
     activation = [](double x) { 
@@ -19,14 +19,14 @@ Layer::Layer(int inputSize, int outputSize, unsigned int seed = 0)
 Layer::Layer(int inputSize, int outputSize, 
              std::function<double(double)> activation,
              std::function<double(double)> activationDerivative,
-             unsigned int seed = 0)
+             unsigned int seed)
     : inputSize(inputSize), outputSize(outputSize), 
       activation(activation), activationDerivative(activationDerivative) {
     
     initializeWeights(seed);
 }
 
-void Layer::initializeWeights(unsigned int seed = 0) {
+void Layer::initializeWeights(unsigned int seed) {
     std::mt19937 gen;
     if (seed == 0) {
         std::random_device rd;

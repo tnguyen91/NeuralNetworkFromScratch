@@ -5,7 +5,7 @@
 
 class Momentum : public Optimizer {
 public:
-    Momentum(double momentum);
+    Momentum(double momentum = 0.9);
 
     void updateWeights(std::vector<std::vector<double>>& weights,
                        const std::vector<std::vector<double>>& weightGradients,
