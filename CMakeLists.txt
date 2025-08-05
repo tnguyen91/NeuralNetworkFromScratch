@@ -23,6 +23,7 @@ set(LIBRARY_SOURCES
     src/SGD.cpp
     src/Momentum.cpp
     src/Adam.cpp
+    src/DataLoader.cpp
 )
 
 add_library(NeuralNetworkLib STATIC ${LIBRARY_SOURCES})
