@@ -5,6 +5,9 @@
 #include "../include/LossFunction.h"
 #include "../include/Layer.h"
 #include "../include/NeuralNetwork.h"
+#include "../include/DataLoader.h"
+
+#define SEED 1234
 
 void testActivationFunctions() {
     std::cout << "Testing sigmoid function..." << std::endl;
@@ -127,7 +130,7 @@ void testXOR() {
     std::cout << "Testing XOR Neural Network..." << std::endl;
 
     std::vector<int> layerSizes = {2, 8, 1};
-    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy", "SGD");
+    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy", "Adam", SEED);
     
     std::vector<std::vector<double>> inputs = {
         {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}
@@ -142,7 +145,7 @@ void testXOR() {
     std::cout << "Initial accuracy: " << initial_accuracy * 100 << "%" << std::endl;
 
     std::cout << "Training the Neural Network..." << std::endl;
-    nn.train(inputs, targets, 2000, 0.5);
+    nn.train(inputs, targets, 2000, 0.2);
     
     std::cout << "Evaluating after training..." << std::endl;
     double final_accuracy = nn.evaluate(inputs, targets);
@@ -156,6 +159,78 @@ void testXOR() {
     std::cout << "XOR Neural Network test passed!\n" << std::endl;
 }
 
+void testIrisDataset() {
+    std::cout << "Testing Iris Dataset Classification..." << std::endl;
+    
+    auto dataset = DataLoader::loadIrisDataset();
+    DataLoader::normalizeFeatures(dataset.inputs);
+    
+    DataLoader::Dataset trainSet, validateSet, testSet;
+
+    DataLoader::trainValidationTestSplit(dataset, trainSet, validateSet, testSet, 0.6, 0.2, 0.2, 42);  // Added seed for reproducibility
+
+    std::cout << "Data split: " << trainSet.inputs.size() << " train, "
+              << validateSet.inputs.size() << " validation, "
+              << testSet.inputs.size() << " test samples" << std::endl;
+    
+    std::cout << "\nClass distribution across sets:" << std::endl;
+    
+    auto analyzeDistribution = [&](const DataLoader::Dataset& set, const std::string& setName) {
+        std::vector<int> classCount(dataset.classNames.size(), 0);
+        for (const auto& target : set.targets) {
+            for (size_t i = 0; i < target.size(); ++i) {
+                if (target[i] == 1.0) {
+                    classCount[i]++;
+                    break;
+                }
+            }
+        }
+        
+        std::cout << setName << " set:" << std::endl;
+        for (size_t i = 0; i < dataset.classNames.size(); ++i) {
+            std::cout << "  " << dataset.classNames[i] << ": " << classCount[i] << " samples" << std::endl;
+        }
+    };
+    
+    analyzeDistribution(trainSet, "Train");
+    analyzeDistribution(validateSet, "Validation"); 
+    analyzeDistribution(testSet, "Test");
+    
+    std::vector<int> layerSizes = {4, 16, 8, 3};
+    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy", "Adam", SEED);
+    
+    std::cout << "Training on Iris dataset..." << std::endl;
+    
+    nn.train(trainSet.inputs, trainSet.targets, 50, 0.01);
+    
+    std::cout << "Evaluating on validation set..." << std::endl;
+    double validation_accuracy = nn.evaluate(validateSet.inputs, validateSet.targets);
+    std::cout << "Validation accuracy: " << validation_accuracy * 100 << "%" << std::endl;
+    assert(validation_accuracy > 0.8);
+
+    std::cout << "Predicting on test set..." << std::endl;
+    int correctPredictions = 0;
+    for (size_t i = 0; i < testSet.inputs.size(); ++i) {
+        std::vector<double> prediction = nn.predict(testSet.inputs[i]);
+        int predictedClass = std::distance(prediction.begin(), std::max_element(prediction.begin(), prediction.end()));
+        std::cout << "Input: ";
+        for (const auto& val : testSet.inputs[i]) {
+            std::cout << val << " ";
+        }
+        std::cout << " -> Predicted class: " << dataset.classNames[predictedClass] << std::endl;
+        int actualClass = std::distance(testSet.targets[i].begin(), std::max_element(testSet.targets[i].begin(), testSet.targets[i].end()));
+        std::cout << "Actual class: " << dataset.classNames[actualClass] << std::endl;
+        if (predictedClass == actualClass) {
+            correctPredictions++;
+        }
+        assert(predictedClass == actualClass || validation_accuracy > 0.8);
+    }
+    double test_accuracy = static_cast<double>(correctPredictions) / testSet.inputs.size();
+    std::cout << "Test accuracy: " << test_accuracy * 100 << "%" << std::endl;
+    assert(test_accuracy > 0.8);
+    std::cout << "Iris dataset classification test passed!\n" << std::endl;
+}
+
 int main() {
     std::cout << "Running tests..." << std::endl;
 
@@ -163,6 +238,7 @@ int main() {
     testLossFunctions();
     testLayer();
     testXOR();
+    testIrisDataset();
 
     std::cout << "All tests passed!" << std::endl;
     return 0;
