@@ -14,7 +14,8 @@ public:
     NeuralNetwork(const std::vector<int>& layerSizes,
                   const std::string& activationFunction,
                   const std::string& lossFunction,
-                  const std::string& optimizer);
+                  const std::string& optimizer,
+                  unsigned int seed);
 
     void train(const std::vector<std::vector<double>>& inputs,
                const std::vector<std::vector<double>>& targets,
@@ -25,7 +26,8 @@ public:
     void addLayer(std::unique_ptr<Layer> layer);
 
     double evaluate(const std::vector<std::vector<double>>& inputs,
-                    const std::vector<std::vector<double>>& targets);
+                    const std::vector<std::vector<double>>& targets,
+                    double tolerance);
 
 private:
     std::vector<std::unique_ptr<Layer>> layers;
