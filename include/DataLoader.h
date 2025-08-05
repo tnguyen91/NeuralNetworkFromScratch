@@ -26,6 +26,14 @@ public:
                               Dataset& testSet, 
                               double testRatio);
     
+    static void trainValidationTestSplit(const Dataset& dataset,
+                                       Dataset& trainSet,
+                                       Dataset& validationSet,
+                                       Dataset& testSet,
+                                       double trainRatio,
+                                       double validationRatio,
+                                       double testRatio);
+    
     static std::vector<std::vector<double>> oneHotEncode(const std::vector<int>& labels, int numClasses);
 
 private:

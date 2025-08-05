@@ -196,6 +196,68 @@ void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Datas
               << testSet.inputs.size() << " test samples" << std::endl;
 }
 
+void DataLoader::trainValidationTestSplit(const Dataset& dataset,
+                                         Dataset& trainSet,
+                                         Dataset& validationSet,
+                                         Dataset& testSet,
+                                         double trainRatio = 0.7,
+                                         double validationRatio = 0.15,
+                                         double testRatio = 0.15) {
+    if (std::abs(trainRatio + validationRatio + testRatio - 1.0) > 1e-6) {
+        throw std::invalid_argument("Train, validation, and test ratios must sum to 1.0");
+    }
+    
+    size_t totalSamples = dataset.inputs.size();
+    size_t trainSize = static_cast<size_t>(totalSamples * trainRatio);
+    size_t validationSize = static_cast<size_t>(totalSamples * validationRatio);
+    size_t testSize = totalSamples - trainSize - validationSize;
+    
+    std::vector<size_t> indices(totalSamples);
+    std::iota(indices.begin(), indices.end(), 0);
+    
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indices.begin(), indices.end(), g);
+    
+    trainSet.inputs.clear();
+    trainSet.targets.clear();
+    validationSet.inputs.clear();
+    validationSet.targets.clear();
+    testSet.inputs.clear();
+    testSet.targets.clear();
+    
+    trainSet.featureNames = dataset.featureNames;
+    trainSet.classNames = dataset.classNames;
+    validationSet.featureNames = dataset.featureNames;
+    validationSet.classNames = dataset.classNames;
+    testSet.featureNames = dataset.featureNames;
+    testSet.classNames = dataset.classNames;
+    
+    size_t currentIndex = 0;
+    
+    for (size_t i = 0; i < trainSize; ++i) {
+        trainSet.inputs.push_back(dataset.inputs[indices[currentIndex]]);
+        trainSet.targets.push_back(dataset.targets[indices[currentIndex]]);
+        currentIndex++;
+    }
+    
+    for (size_t i = 0; i < validationSize; ++i) {
+        validationSet.inputs.push_back(dataset.inputs[indices[currentIndex]]);
+        validationSet.targets.push_back(dataset.targets[indices[currentIndex]]);
+        currentIndex++;
+    }
+    
+    for (size_t i = 0; i < testSize; ++i) {
+        testSet.inputs.push_back(dataset.inputs[indices[currentIndex]]);
+        testSet.targets.push_back(dataset.targets[indices[currentIndex]]);
+        currentIndex++;
+    }
+    
+    std::cout << "Train/Validation/Test split: " << trainSet.inputs.size() << " train, " 
+              << validationSet.inputs.size() << " validation, " 
+              << testSet.inputs.size() << " test samples" << std::endl;
+}
+
 // for int labels
 std::vector<std::vector<double>> DataLoader::oneHotEncode(const std::vector<int>& labels, int numClasses) {
     std::vector<std::vector<double>> encoded(labels.size(), std::vector<double>(numClasses, 0.0));
