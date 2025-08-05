@@ -6,9 +6,9 @@
 
 class Layer {
 public:
-    Layer(int inputSize, int outputSize);
+    Layer(int inputSize, int outputSize, unsigned int seed = 0);
     Layer(int inputSize, int outputSize, std::function<double(double)> activation,
-          std::function<double(double)> activationDerivative);
+          std::function<double(double)> activationDerivative, unsigned int seed = 0);
 
     std::vector<double> forward(const std::vector<double>& inputs);
 
@@ -40,7 +40,7 @@ private:
     std::function<double(double)> activation;
     std::function<double(double)> activationDerivative;
 
-    void initializeWeights();
+    void initializeWeights(unsigned int seed);
 };
 
 #endif

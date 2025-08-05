@@ -3,7 +3,7 @@
 #include <random>
 #include <numeric>
 
-Layer::Layer(int inputSize, int outputSize)
+Layer::Layer(int inputSize, int outputSize, unsigned int seed = 0)
     : inputSize(inputSize), outputSize(outputSize) {
     
     activation = [](double x) { 
@@ -13,21 +13,28 @@ Layer::Layer(int inputSize, int outputSize)
         return ActivationFunctions::sigmoidDerivative(x); 
     };
     
-    initializeWeights();
+    initializeWeights(seed);
 }
 
 Layer::Layer(int inputSize, int outputSize, 
              std::function<double(double)> activation,
-             std::function<double(double)> activationDerivative)
+             std::function<double(double)> activationDerivative,
+             unsigned int seed = 0)
     : inputSize(inputSize), outputSize(outputSize), 
       activation(activation), activationDerivative(activationDerivative) {
     
-    initializeWeights();
+    initializeWeights(seed);
 }
 
-void Layer::initializeWeights() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
+void Layer::initializeWeights(unsigned int seed = 0) {
+    std::mt19937 gen;
+    if (seed == 0) {
+        std::random_device rd;
+        gen.seed(rd());
+    } else {
+        gen.seed(seed);
+    }
+    
     double limit = std::sqrt(2.0 / (inputSize + outputSize)) * 0.5;
     std::uniform_real_distribution<> dis(-limit, limit);
 

@@ -160,7 +160,7 @@ void DataLoader::normalizeFeatures(std::vector<std::vector<double>>& data) {
     }
 }
 
-void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Dataset& testSet, double testRatio = 0.3) {
+void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Dataset& testSet, double testRatio = 0.2, unsigned int seed = 0) {
     size_t totalSamples = dataset.inputs.size();
     size_t testSize = static_cast<size_t>(totalSamples * testRatio);
     size_t trainSize = totalSamples - testSize;
@@ -168,8 +168,13 @@ void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Datas
     std::vector<size_t> indices(totalSamples);
     std::iota(indices.begin(), indices.end(), 0);
     
-    std::random_device rd;
-    std::mt19937 g(rd());
+    std::mt19937 g;
+    if (seed == 0) {
+        std::random_device rd;
+        g.seed(rd());
+    } else {
+        g.seed(seed);
+    }
     std::shuffle(indices.begin(), indices.end(), g);
     
     trainSet.inputs.clear();
@@ -200,9 +205,10 @@ void DataLoader::trainValidationTestSplit(const Dataset& dataset,
                                          Dataset& trainSet,
                                          Dataset& validationSet,
                                          Dataset& testSet,
-                                         double trainRatio = 0.7,
-                                         double validationRatio = 0.15,
-                                         double testRatio = 0.15) {
+                                         double trainRatio = 0.6,
+                                         double validationRatio = 0.2,
+                                         double testRatio = 0.2,
+                                         unsigned int seed = 0) {
     if (std::abs(trainRatio + validationRatio + testRatio - 1.0) > 1e-6) {
         throw std::invalid_argument("Train, validation, and test ratios must sum to 1.0");
     }
@@ -215,8 +221,13 @@ void DataLoader::trainValidationTestSplit(const Dataset& dataset,
     std::vector<size_t> indices(totalSamples);
     std::iota(indices.begin(), indices.end(), 0);
     
-    std::random_device rd;
-    std::mt19937 g(rd());
+    std::mt19937 g;
+    if (seed == 0) {
+        std::random_device rd;
+        g.seed(rd());
+    } else {
+        g.seed(seed);
+    }
     std::shuffle(indices.begin(), indices.end(), g);
     
     trainSet.inputs.clear();
