@@ -168,10 +168,6 @@ void testIrisDataset() {
     DataLoader::Dataset trainSet, validateSet, testSet;
 
     DataLoader::trainValidationTestSplit(dataset, trainSet, validateSet, testSet, 0.6, 0.2, 0.2, SEED);
-
-    std::cout << "Data split: " << trainSet.inputs.size() << " train, "
-              << validateSet.inputs.size() << " validation, "
-              << testSet.inputs.size() << " test samples" << std::endl;
     
     std::cout << "\nClass distribution across sets:" << std::endl;
     
