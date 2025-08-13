@@ -114,6 +114,9 @@ void NeuralNetwork::addLayer(std::unique_ptr<Layer> layer) {
 double NeuralNetwork::evaluate(const std::vector<std::vector<double>>& inputs,
                                 const std::vector<std::vector<double>>& targets,
                                 double tolerance) {
+    if (inputs.size() != targets.size()) {
+        throw std::invalid_argument("Inputs and targets must have the same number of samples.");
+    }
     int correctCount = 0;
     for (size_t i = 0; i < inputs.size(); ++i) {
         std::vector<double> output = predict(inputs[i]);
