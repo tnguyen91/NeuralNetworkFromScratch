@@ -15,19 +15,28 @@ bool DataLoader::downloadIrisDataset(const std::string& filename) {
     std::string url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data";
     
     std::string mkdirCommand = "mkdir -p data";
-    std::system(mkdirCommand.c_str());
     
-    std::string command = "curl -s -o " + filename + " " + url;
-    
-    int result = std::system(command.c_str());
-    
-    if (result == 0) {
-        std::cout << "Successfully downloaded Iris dataset to " << filename << std::endl;
-        return true;
-    } else {
-        std::cout << "Failed to download Iris dataset. Error code: " << result << std::endl;
+    int mkdirResult = std::system(mkdirCommand.c_str());
+    if (mkdirResult != 0) {
+        std::cerr << "Failed to create data directory" << std::endl;
         return false;
     }
+    
+    std::string command = "curl -s -L -o " + filename + " " + url;
+    int downloadResult = std::system(command.c_str());
+    if (downloadResult != 0) {
+        std::cerr << "Failed to download dataset. Error code: " << downloadResult << std::endl;
+        return false;
+    }
+    
+    std::ifstream testFile(filename);
+    if (!testFile.is_open() || testFile.peek() == std::ifstream::traits_type::eof()) {
+        std::cerr << "Downloaded file is empty or corrupted" << std::endl;
+        return false;
+    }
+    
+    std::cout << "Successfully downloaded dataset to " << filename << std::endl;
+    return true;
 }
 
 DataLoader::Dataset DataLoader::loadIrisDataset() {
@@ -51,6 +60,7 @@ DataLoader::Dataset DataLoader::loadIrisFromCSV(const std::string& filename) {
     }
     
     std::set<std::string> uniqueSpecies;
+    std::vector<std::string> allSpecies; 
     std::string line;
     
     while (std::getline(file, line)) {
@@ -81,6 +91,7 @@ DataLoader::Dataset DataLoader::loadIrisFromCSV(const std::string& filename) {
             
             if (features.size() == 4) {
                 dataset.inputs.push_back(features);
+                allSpecies.push_back(species);
                 uniqueSpecies.insert(species);
             }
         }
@@ -95,46 +106,21 @@ DataLoader::Dataset DataLoader::loadIrisFromCSV(const std::string& filename) {
     std::vector<std::string> speciesVector(uniqueSpecies.begin(), uniqueSpecies.end());
     std::sort(speciesVector.begin(), speciesVector.end());
     
-    dataset.featureNames = {"feature_1", "feature_2", "feature_3", "feature_4"};
+    dataset.featureNames = {"sepal_length", "sepal_width", "petal_length", "petal_width"};
     dataset.classNames = speciesVector; 
     
-    // one-hot encoding 
-    file.open(filename);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not reopen file for one-hot encoding: " + filename);
-    }
-    
-    size_t sampleIndex = 0;
-    while (std::getline(file, line) && sampleIndex < dataset.inputs.size()) {
-        if (line.empty()) continue;
-        
-        std::stringstream ss(line);
-        std::string cell;
-        std::string species;
-        
-        for (int i = 0; i < 4; ++i) {
-            std::getline(ss, cell, ',');
-        }
-        
-        if (std::getline(ss, species, ',')) {
-            species.erase(species.find_last_not_of(" \t\r\n\"'") + 1);
-            species.erase(0, species.find_first_not_of(" \t\r\n\"'"));
-            
-            // Create one-hot encoding
-            std::vector<double> target(speciesVector.size(), 0.0);
-            auto it = std::find(speciesVector.begin(), speciesVector.end(), species);
-            if (it != speciesVector.end()) {
-                size_t classIndex = std::distance(speciesVector.begin(), it);
-                target[classIndex] = 1.0;
-                dataset.targets.push_back(target);
-                sampleIndex++;
-            } else {
-                std::cerr << "Unknown species during encoding: " << species << std::endl;
-            }
+    dataset.targets.reserve(allSpecies.size());
+    for (const auto& species : allSpecies) {
+        std::vector<double> target(speciesVector.size(), 0.0);
+        auto it = std::find(speciesVector.begin(), speciesVector.end(), species);
+        if (it != speciesVector.end()) {
+            size_t classIndex = std::distance(speciesVector.begin(), it);
+            target[classIndex] = 1.0;
+            dataset.targets.push_back(target);
+        } else {
+            std::cerr << "Unknown species during encoding: " << species << std::endl;
         }
     }
-    
-    file.close();
     
     std::cout << "Loaded " << dataset.inputs.size() << " samples from " << filename << std::endl;
     std::cout << "Discovered " << dataset.classNames.size() << " classes: ";
@@ -161,6 +147,12 @@ void DataLoader::normalizeFeatures(std::vector<std::vector<double>>& data) {
 }
 
 void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Dataset& testSet, double testRatio, unsigned int seed) {
+    if (dataset.inputs.empty()) {
+        throw std::invalid_argument("Dataset cannot be empty");
+    }
+    if (dataset.inputs.size() != dataset.targets.size()) {
+        throw std::invalid_argument("Inputs and targets must have the same number of samples");
+    }
     size_t totalSamples = dataset.inputs.size();
     size_t testSize = static_cast<size_t>(totalSamples * testRatio);
     size_t trainSize = totalSamples - testSize;
@@ -186,6 +178,11 @@ void DataLoader::trainTestSplit(const Dataset& dataset, Dataset& trainSet, Datas
     trainSet.classNames = dataset.classNames;
     testSet.featureNames = dataset.featureNames;
     testSet.classNames = dataset.classNames;
+
+    trainSet.inputs.reserve(trainSize);
+    trainSet.targets.reserve(trainSize);
+    testSet.inputs.reserve(testSize);
+    testSet.targets.reserve(testSize);
     
     for (size_t i = 0; i < trainSize; ++i) {
         trainSet.inputs.push_back(dataset.inputs[indices[i]]);
@@ -209,6 +206,15 @@ void DataLoader::trainValidationTestSplit(const Dataset& dataset,
                                          double validationRatio,
                                          double testRatio,
                                          unsigned int seed) {
+    if (dataset.inputs.empty()) {
+        throw std::invalid_argument("Dataset cannot be empty");
+    }
+    if (dataset.inputs.size() != dataset.targets.size()) {
+        throw std::invalid_argument("Number of inputs must match number of targets");
+    }
+    if (trainRatio < 0 || validationRatio < 0 || testRatio < 0) {
+        throw std::invalid_argument("All ratios must be non-negative");
+    }
     if (std::abs(trainRatio + validationRatio + testRatio - 1.0) > 1e-6) {
         throw std::invalid_argument("Train, validation, and test ratios must sum to 1.0");
     }
@@ -244,6 +250,13 @@ void DataLoader::trainValidationTestSplit(const Dataset& dataset,
     testSet.featureNames = dataset.featureNames;
     testSet.classNames = dataset.classNames;
     
+    trainSet.inputs.reserve(trainSize);
+    trainSet.targets.reserve(trainSize);
+    validationSet.inputs.reserve(validationSize);
+    validationSet.targets.reserve(validationSize);
+    testSet.inputs.reserve(testSize);
+    testSet.targets.reserve(testSize);
+
     size_t currentIndex = 0;
     
     for (size_t i = 0; i < trainSize; ++i) {
