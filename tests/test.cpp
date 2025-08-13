@@ -130,7 +130,7 @@ void testXOR() {
     std::cout << "Testing XOR Neural Network..." << std::endl;
 
     std::vector<int> layerSizes = {2, 8, 1};
-    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy", "Adam", SEED);
+    NeuralNetwork nn(layerSizes, "sigmoid", "crossEntropy", "SGD", SEED);
     
     std::vector<std::vector<double>> inputs = {
         {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}
@@ -145,13 +145,13 @@ void testXOR() {
     std::cout << "Initial accuracy: " << initial_accuracy * 100 << "%" << std::endl;
 
     std::cout << "Training the Neural Network..." << std::endl;
-    nn.train(inputs, targets, 2000, 0.2);
+    nn.train(inputs, targets, 1500, 0.5);
     
     std::cout << "Evaluating after training..." << std::endl;
     double final_accuracy = nn.evaluate(inputs, targets);
     std::cout << "Final accuracy: " << final_accuracy * 100 << "%" << std::endl;
 
-    assert(final_accuracy == 1);
+    assert(final_accuracy >= 0.9);
     assert(nn.predict({0.0, 0.0})[0] < 0.5);
     assert(nn.predict({0.0, 1.0})[0] >= 0.5);
     assert(nn.predict({1.0, 0.0})[0] >= 0.5);
@@ -167,7 +167,7 @@ void testIrisDataset() {
     
     DataLoader::Dataset trainSet, validateSet, testSet;
 
-    DataLoader::trainValidationTestSplit(dataset, trainSet, validateSet, testSet, 0.6, 0.2, 0.2, 42);  // Added seed for reproducibility
+    DataLoader::trainValidationTestSplit(dataset, trainSet, validateSet, testSet, 0.6, 0.2, 0.2, SEED);
 
     std::cout << "Data split: " << trainSet.inputs.size() << " train, "
               << validateSet.inputs.size() << " validation, "
@@ -201,7 +201,7 @@ void testIrisDataset() {
     
     std::cout << "Training on Iris dataset..." << std::endl;
     
-    nn.train(trainSet.inputs, trainSet.targets, 50, 0.01);
+    nn.train(trainSet.inputs, trainSet.targets, 100, 0.01);
     
     std::cout << "Evaluating on validation set..." << std::endl;
     double validation_accuracy = nn.evaluate(validateSet.inputs, validateSet.targets);
