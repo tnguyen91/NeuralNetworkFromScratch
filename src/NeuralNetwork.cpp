@@ -14,37 +14,72 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                              const std::string& activationFunction,
                              const std::string& lossFunction,
                              const std::string& optimizer,
+                             unsigned int seed)
+    : NeuralNetwork(
+        layerSizes,
+        activationFunction == "softmax" ? std::string("relu") : activationFunction,
+        activationFunction == "softmax" ? std::string("softmax") : activationFunction,
+        lossFunction,
+        optimizer,
+        seed) {}
+
+NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
+                             const std::string& hiddenAct,
+                             const std::string& outputAct,
+                             const std::string& lossFunction,
+                             const std::string& optimizer,
                              unsigned int seed) {
-    if (activationFunction == "sigmoid") {
-        for (size_t i = 1; i < layerSizes.size(); ++i) {
-            unsigned int layerSeed = (seed == 0) ? 0 : seed + i;
-            layers.push_back(std::make_unique<Layer>(
-                layerSizes[i - 1], layerSizes[i],
-                [](double x) {
-                    return ActivationFunctions::sigmoid(x);
-                },
-                [](double sigmoid_output) {
-                    return ActivationFunctions::sigmoidDerivative(sigmoid_output);
-                },
-                layerSeed
-            ));
+
+    auto makeHidden = [&](int in, int out, unsigned int seed) {
+        if (hiddenAct == "relu") {
+            return std::make_unique<Layer>(in, out,
+                [](double x) { return ActivationFunctions::relu(x); },
+                [](double x) { return ActivationFunctions::reluDerivative(x); },
+                std::string("relu"),
+                seed);
+        } else if (hiddenAct == "sigmoid") {
+            return std::make_unique<Layer>(in, out,
+                [](double x) { return ActivationFunctions::sigmoid(x); },
+                [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+                std::string("sigmoid"),
+                seed);
+        } else {
+            throw std::invalid_argument("Unsupported hidden activation: " + hiddenAct);
         }
-    } else if (activationFunction == "relu") {
-        for (size_t i = 1; i < layerSizes.size(); ++i) {
-            unsigned int layerSeed = (seed == 0) ? 0 : seed + i;
-            layers.push_back(std::make_unique<Layer>(
-                layerSizes[i - 1], layerSizes[i],
-                [](double x) {
-                    return ActivationFunctions::relu(x);
-                },
-                [](double x) {
-                    return ActivationFunctions::reluDerivative(x);
-                },
-                layerSeed
-            ));
+    };
+
+    auto makeOutput = [&](int in, int out, unsigned int seed) {
+        if (outputAct == "softmax") {
+            return std::make_unique<Layer>(in, out, true, seed);
+        } else if (outputAct == "relu") {
+            return std::make_unique<Layer>(in, out,
+                [](double x) { return ActivationFunctions::relu(x); },
+                [](double x) { return ActivationFunctions::reluDerivative(x); },
+                std::string("relu"),
+                seed);
+        } else if (outputAct == "sigmoid") {
+            return std::make_unique<Layer>(in, out,
+                [](double x) { return ActivationFunctions::sigmoid(x); },
+                [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+                std::string("sigmoid"),
+                seed);
+        } else {
+            throw std::invalid_argument("Unsupported output activation: " + outputAct);
         }
-    } else {
-        throw std::invalid_argument("Unsupported activation function: " + activationFunction);
+    };
+
+    if (outputAct == "softmax" && lossFunction != std::string("crossEntropy")) {
+        std::cerr << "Warning: using softmax output with non-crossEntropy loss.\n";
+    }
+
+    for (size_t i = 1; i < layerSizes.size(); ++i) {
+        unsigned int layerSeed = (seed == 0) ? 0 : seed + static_cast<unsigned int>(i);
+        bool isLast = (i == layerSizes.size() - 1);
+        if (isLast) {
+            layers.push_back(makeOutput(layerSizes[i - 1], layerSizes[i], layerSeed));
+        } else {
+            layers.push_back(makeHidden(layerSizes[i - 1], layerSizes[i], layerSeed));
+        }
     }
 
     if (lossFunction == "crossEntropy") {

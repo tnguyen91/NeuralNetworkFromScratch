@@ -17,6 +17,13 @@ public:
                   const std::string& optimizer,
                   unsigned int seed = 0);
 
+    NeuralNetwork(const std::vector<int>& layerSizes,
+                  const std::string& hiddenActivation,
+                  const std::string& outputActivation,
+                  const std::string& lossFunction,
+                  const std::string& optimizer,
+                  unsigned int seed = 0);
+
     void train(const std::vector<std::vector<double>>& inputs,
                const std::vector<std::vector<double>>& targets,
                int epochs, double learningRate);
