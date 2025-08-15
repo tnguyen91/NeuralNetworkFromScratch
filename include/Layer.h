@@ -3,12 +3,17 @@
 
 #include <vector>
 #include <functional>
+#include <string>
 
 class Layer {
 public:
     Layer(int inputSize, int outputSize, unsigned int seed = 0);
     Layer(int inputSize, int outputSize, std::function<double(double)> activation,
           std::function<double(double)> activationDerivative, unsigned int seed = 0);
+    Layer(int inputSize, int outputSize, std::function<double(double)> activation,
+          std::function<double(double)> activationDerivative, const std::string& activationName, 
+          unsigned int seed = 0);
+    Layer(int inputSize, int outputSize, bool useSoftmax, unsigned int seed = 0);
 
     std::vector<double> forward(const std::vector<double>& inputs);
 
@@ -39,8 +44,9 @@ private:
 
     std::function<double(double)> activation;
     std::function<double(double)> activationDerivative;
+    bool isSoftmax = false;
 
-    void initializeWeights(unsigned int seed);
+    void initializeWeights(unsigned int seed, const std::string& activationName);
 };
 
 #endif
