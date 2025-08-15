@@ -63,6 +63,12 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                 [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
                 std::string("sigmoid"),
                 seed);
+        } else if (outputAct == "linear") {
+            return std::make_unique<Layer>(in, out,
+                [](double x) { return x; },
+                [](double /*y*/) { return 1.0; },
+                std::string("linear"),
+                seed);
         } else {
             throw std::invalid_argument("Unsupported output activation: " + outputAct);
         }
