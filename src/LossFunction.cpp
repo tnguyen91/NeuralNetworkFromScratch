@@ -25,7 +25,7 @@ namespace LossFunction {
         for (size_t i = 0; i < predicted.size(); ++i) {
             sum += actual[i] * std::log(predicted[i] + 1e-15); // avoid log(0)
         }
-        return -sum / predicted.size();
+        return -sum;
     }
 
     std::vector<double> crossEntropyDerivative(const std::vector<double>& predicted, const std::vector<double>& actual) {
