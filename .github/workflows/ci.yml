@@ -19,13 +19,22 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake build-essential clang
+          sudo apt-get install -y cmake build-essential clang pkg-config
+          git clone https://github.com/google/googletest.git -b release-1.12.1
+          cd googletest
+          cmake -B build
+          cmake --build build
+          sudo cmake --install build
+          cd ..
       - name: Configure
         run: |
+          if [ "${{ matrix.compiler }}" == "clang" ]; then
+            export CC=clang CXX=clang++
+          fi
           cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
       - name: Build
         run: |
           cmake --build build -j
       - name: Run tests
         run: |
-          ctest --test-dir build --output-on-failure
+          ctest --test-dir build --output-on-failure --verbose
