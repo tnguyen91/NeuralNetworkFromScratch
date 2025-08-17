@@ -6,8 +6,13 @@ Momentum::Momentum(double momentum)
 void Momentum::updateWeights(std::vector<std::vector<double>>& weights,
                              const std::vector<std::vector<double>>& weightGradients,
                              double learningRate) {
-    if (weightVelocities.empty()) {
-        weightVelocities.resize(weights.size(), std::vector<double>(weights[0].size(), 0.0));
+    if (weights.empty()) return;
+    
+    if (weightVelocities.size() != weights.size()) {
+        weightVelocities.resize(weights.size());
+        for (size_t i = 0; i < weights.size(); ++i) {
+            weightVelocities[i].resize(weights[i].size(), 0.0);
+        }
     }
 
     for (size_t i = 0; i < weights.size(); ++i) {
@@ -21,7 +26,9 @@ void Momentum::updateWeights(std::vector<std::vector<double>>& weights,
 void Momentum::updateBiases(std::vector<double>& biases,
                              const std::vector<double>& biasGradients,
                              double learningRate) {
-    if (biasVelocities.empty()) {
+    if (biases.empty()) return;
+    
+    if (biasVelocities.size() != biases.size()) {
         biasVelocities.resize(biases.size(), 0.0);
     }
 
