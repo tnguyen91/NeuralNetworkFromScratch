@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 NeuralNetwork::NeuralNetwork() {
 }
@@ -17,8 +18,8 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                              unsigned int seed)
     : NeuralNetwork(
         layerSizes,
-        activationFunction == "softmax" ? std::string("relu") : activationFunction,
-        activationFunction == "softmax" ? std::string("softmax") : activationFunction,
+        activationFunction == "softmax" ? "relu" : activationFunction,
+        activationFunction == "softmax" ? "softmax" : activationFunction,
         lossFunction,
         optimizer,
         seed) {}
@@ -29,87 +30,51 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                              const std::string& lossFunction,
                              const std::string& optimizer,
                              unsigned int seed) {
-
-    auto makeHidden = [&](int in, int out, unsigned int seed) {
-        if (hiddenAct == "relu") {
-            return std::make_unique<Layer>(in, out,
-                [](double x) { return ActivationFunctions::relu(x); },
-                [](double x) { return ActivationFunctions::reluDerivative(x); },
-                std::string("relu"),
-                seed);
-        } else if (hiddenAct == "sigmoid") {
-            return std::make_unique<Layer>(in, out,
-                [](double x) { return ActivationFunctions::sigmoid(x); },
-                [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
-                std::string("sigmoid"),
-                seed);
-        } else {
-            throw std::invalid_argument("Unsupported hidden activation: " + hiddenAct);
+    
+    if (layerSizes.size() < 2) {
+        throw std::invalid_argument("Network must have at least 2 layers (input and output)");
+    }
+    
+    for (int size : layerSizes) {
+        if (size <= 0) {
+            throw std::invalid_argument("All layer sizes must be positive");
         }
-    };
-
-    auto makeOutput = [&](int in, int out, unsigned int seed) {
-        if (outputAct == "softmax") {
-            return std::make_unique<Layer>(in, out, true, seed);
-        } else if (outputAct == "relu") {
-            return std::make_unique<Layer>(in, out,
-                [](double x) { return ActivationFunctions::relu(x); },
-                [](double x) { return ActivationFunctions::reluDerivative(x); },
-                std::string("relu"),
-                seed);
-        } else if (outputAct == "sigmoid") {
-            return std::make_unique<Layer>(in, out,
-                [](double x) { return ActivationFunctions::sigmoid(x); },
-                [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
-                std::string("sigmoid"),
-                seed);
-        } else if (outputAct == "linear") {
-            return std::make_unique<Layer>(in, out,
-                [](double x) { return x; },
-                [](double /*y*/) { return 1.0; },
-                std::string("linear"),
-                seed);
-        } else {
-            throw std::invalid_argument("Unsupported output activation: " + outputAct);
-        }
-    };
-
-    if (outputAct == "softmax" && lossFunction != std::string("crossEntropy")) {
+    }
+    
+    if (outputAct == "softmax" && lossFunction != "crossEntropy") {
         std::cerr << "Warning: using softmax output with non-crossEntropy loss.\n";
     }
 
-    for (size_t i = 1; i < layerSizes.size(); ++i) {
-        unsigned int layerSeed = (seed == 0) ? 0 : seed + static_cast<unsigned int>(i);
-        bool isLast = (i == layerSizes.size() - 1);
-        if (isLast) {
-            layers.push_back(makeOutput(layerSizes[i - 1], layerSizes[i], layerSeed));
-        } else {
-            layers.push_back(makeHidden(layerSizes[i - 1], layerSizes[i], layerSeed));
-        }
-    }
-
-    if (lossFunction == "crossEntropy") {
-        this->lossFunction = LossFunction::crossEntropy;
-        this->lossDerivative = LossFunction::crossEntropyDerivative;
-    } else if (lossFunction == "meanSquaredError") {
-        this->lossFunction = LossFunction::meanSquaredError;
-        this->lossDerivative = LossFunction::meanSquaredErrorDerivative;
-    }
-
-    if (optimizer == "SGD") {
-        this->optimizer = std::make_unique<SGD>();
-    } else if (optimizer == "Momentum") {
-        this->optimizer = std::make_unique<Momentum>(0.9);
-    } else if (optimizer == "Adam") {
-        this->optimizer = std::make_unique<Adam>(0.9, 0.999, 1e-8);
-    } else {
-        throw std::invalid_argument("Unsupported optimizer: " + optimizer);
-    }
+    createLayers(layerSizes, hiddenAct, outputAct, seed);
+    
+    setupLossFunction(lossFunction);
+    
+    setupOptimizer(optimizer);
 }
 
 void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
                           const std::vector<std::vector<double>>& targets,
                           int epochs, double learningRate) {
+    
+    if (inputs.empty() || targets.empty()) {
+        throw std::invalid_argument("Training data cannot be empty");
+    }
+    
+    if (inputs.size() != targets.size()) {
+        throw std::invalid_argument("Number of inputs must match number of targets");
+    }
+    
+    if (epochs <= 0) {
+        throw std::invalid_argument("Number of epochs must be positive");
+    }
+    
+    if (learningRate <= 0.0) {
+        throw std::invalid_argument("Learning rate must be positive");
+    }
+    
+    if (layers.empty()) {
+        throw std::runtime_error("Network has no layers");
+    }
     
     for (int epoch = 0; epoch < epochs; ++epoch) {
         double totalLoss = 0.0;
@@ -138,6 +103,14 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
 }
 
 std::vector<double> NeuralNetwork::predict(const std::vector<double>& input) {
+    if (layers.empty()) {
+        throw std::runtime_error("Network has no layers");
+    }
+    
+    if (input.empty()) {
+        throw std::invalid_argument("Input cannot be empty");
+    }
+    
     std::vector<double> output = input;
     for (auto& layer : layers) {
         output = layer->forward(output);
@@ -204,4 +177,89 @@ double NeuralNetwork::evaluate(const std::vector<std::vector<double>>& inputs,
         }
     }
     return static_cast<double>(correctCount) / inputs.size();
+}
+
+void NeuralNetwork::createLayers(const std::vector<int>& layerSizes,
+                                const std::string& hiddenActivation,
+                                const std::string& outputActivation,
+                                unsigned int seed) {
+    for (size_t i = 1; i < layerSizes.size(); ++i) {
+        unsigned int layerSeed = (seed == 0) ? 0 : seed + static_cast<unsigned int>(i);
+        bool isOutputLayer = (i == layerSizes.size() - 1);
+        
+        if (isOutputLayer) {
+            layers.push_back(createOutputLayer(layerSizes[i - 1], layerSizes[i], 
+                                             outputActivation, layerSeed));
+        } else {
+            layers.push_back(createHiddenLayer(layerSizes[i - 1], layerSizes[i], 
+                                             hiddenActivation, layerSeed));
+        }
+    }
+}
+
+std::unique_ptr<Layer> NeuralNetwork::createHiddenLayer(int inputSize, int outputSize,
+                                                       const std::string& activation,
+                                                       unsigned int seed) {
+    if (activation == "relu") {
+        return std::make_unique<Layer>(inputSize, outputSize,
+            [](double x) { return ActivationFunctions::relu(x); },
+            [](double x) { return ActivationFunctions::reluDerivative(x); },
+            "relu", seed);
+    } else if (activation == "sigmoid") {
+        return std::make_unique<Layer>(inputSize, outputSize,
+            [](double x) { return ActivationFunctions::sigmoid(x); },
+            [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+            "sigmoid", seed);
+    } else {
+        throw std::invalid_argument("Unsupported hidden activation: " + activation);
+    }
+}
+
+std::unique_ptr<Layer> NeuralNetwork::createOutputLayer(int inputSize, int outputSize,
+                                                       const std::string& activation,
+                                                       unsigned int seed) {
+    if (activation == "softmax") {
+        return std::make_unique<Layer>(inputSize, outputSize, true, seed);
+    } else if (activation == "relu") {
+        return std::make_unique<Layer>(inputSize, outputSize,
+            [](double x) { return ActivationFunctions::relu(x); },
+            [](double x) { return ActivationFunctions::reluDerivative(x); },
+            "relu", seed);
+    } else if (activation == "sigmoid") {
+        return std::make_unique<Layer>(inputSize, outputSize,
+            [](double x) { return ActivationFunctions::sigmoid(x); },
+            [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+            "sigmoid", seed);
+    } else if (activation == "linear") {
+        return std::make_unique<Layer>(inputSize, outputSize,
+            [](double x) { return x; },
+            [](double /*y*/) { return 1.0; },
+            "linear", seed);
+    } else {
+        throw std::invalid_argument("Unsupported output activation: " + activation);
+    }
+}
+
+void NeuralNetwork::setupLossFunction(const std::string& lossFunction) {
+    if (lossFunction == "crossEntropy") {
+        this->lossFunction = LossFunction::crossEntropy;
+        this->lossDerivative = LossFunction::crossEntropyDerivative;
+    } else if (lossFunction == "meanSquaredError") {
+        this->lossFunction = LossFunction::meanSquaredError;
+        this->lossDerivative = LossFunction::meanSquaredErrorDerivative;
+    } else {
+        throw std::invalid_argument("Unsupported loss function: " + lossFunction);
+    }
+}
+
+void NeuralNetwork::setupOptimizer(const std::string& optimizer) {
+    if (optimizer == "SGD") {
+        this->optimizer = std::make_unique<SGD>();
+    } else if (optimizer == "Momentum") {
+        this->optimizer = std::make_unique<Momentum>(0.9);
+    } else if (optimizer == "Adam") {
+        this->optimizer = std::make_unique<Adam>(0.9, 0.999, 1e-8);
+    } else {
+        throw std::invalid_argument("Unsupported optimizer: " + optimizer);
+    }
 }

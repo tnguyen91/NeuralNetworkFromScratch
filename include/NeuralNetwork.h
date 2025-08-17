@@ -41,6 +41,22 @@ private:
     std::function<double(const std::vector<double>&, const std::vector<double>&)> lossFunction;
     std::function<std::vector<double>(const std::vector<double>&, const std::vector<double>&)> lossDerivative;
     std::unique_ptr<Optimizer> optimizer;
+    
+    void createLayers(const std::vector<int>& layerSizes,
+                     const std::string& hiddenActivation,
+                     const std::string& outputActivation,
+                     unsigned int seed);
+    
+    void setupLossFunction(const std::string& lossFunction);
+    void setupOptimizer(const std::string& optimizer);
+    
+    std::unique_ptr<Layer> createHiddenLayer(int inputSize, int outputSize,
+                                            const std::string& activation,
+                                            unsigned int seed);
+    
+    std::unique_ptr<Layer> createOutputLayer(int inputSize, int outputSize,
+                                            const std::string& activation,
+                                            unsigned int seed);
 };
 
 #endif
