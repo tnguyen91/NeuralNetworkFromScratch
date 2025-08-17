@@ -5,7 +5,7 @@
 #include <cassert>
 
 DenseLayer::DenseLayer(int inputSize, int outputSize, unsigned int seed)
-    : inputSize(inputSize), outputSize(outputSize), isSoftmax(false) {
+    : inputSize(inputSize), outputSize(outputSize), isSoftmax(false), activationName("relu") {
     initializeWeights(seed, "relu");
     activation = [](double x) { return ActivationFunctions::relu(x); };
     activationDerivative = [](double x) { return ActivationFunctions::reluDerivative(x); };
@@ -13,19 +13,19 @@ DenseLayer::DenseLayer(int inputSize, int outputSize, unsigned int seed)
 
 DenseLayer::DenseLayer(int inputSize, int outputSize, std::function<double(double)> activation,
                        std::function<double(double)> activationDerivative, unsigned int seed)
-    : inputSize(inputSize), outputSize(outputSize), activation(activation), activationDerivative(activationDerivative), isSoftmax(false) {
+    : inputSize(inputSize), outputSize(outputSize), activation(activation), activationDerivative(activationDerivative), isSoftmax(false), activationName("custom") {
     initializeWeights(seed, "");
 }
 
 DenseLayer::DenseLayer(int inputSize, int outputSize, std::function<double(double)> activation,
                        std::function<double(double)> activationDerivative, const std::string& activationName,
                        unsigned int seed)
-    : inputSize(inputSize), outputSize(outputSize), activation(activation), activationDerivative(activationDerivative), isSoftmax(false) {
+    : inputSize(inputSize), outputSize(outputSize), activation(activation), activationDerivative(activationDerivative), isSoftmax(false), activationName(activationName) {
     initializeWeights(seed, activationName);
 }
 
 DenseLayer::DenseLayer(int inputSize, int outputSize, bool useSoftmax, unsigned int seed)
-    : inputSize(inputSize), outputSize(outputSize), isSoftmax(useSoftmax) {
+    : inputSize(inputSize), outputSize(outputSize), isSoftmax(useSoftmax), activationName(useSoftmax ? "softmax" : "relu") {
     initializeWeights(seed, useSoftmax ? "softmax" : "");
 }
 
@@ -86,6 +86,7 @@ std::vector<std::vector<double>>& DenseLayer::getWeights() { return weights; }
 std::vector<double>& DenseLayer::getBiases() { return biases; }
 const std::vector<std::vector<double>>& DenseLayer::getWeightGradients() const { return weightsGradients; }
 const std::vector<double>& DenseLayer::getBiasGradients() const { return biasGradients; }
+const std::string& DenseLayer::getActivationName() const { return activationName; }
 
 void DenseLayer::initializeWeights(unsigned int seed, const std::string& activationName) {
     std::mt19937 gen;

@@ -37,6 +37,10 @@ public:
                     const std::vector<std::vector<double>>& targets,
                     double tolerance = 0.01);
 
+    void save(const std::string& filename) const;
+
+    void load(const std::string& filename);
+
 private:
     std::vector<std::unique_ptr<Layer>> layers;
     std::function<double(const std::vector<double>&, const std::vector<double>&)> lossFunction;

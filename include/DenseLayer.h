@@ -26,6 +26,8 @@ public:
     const std::vector<std::vector<double>>& getWeightGradients() const;
     const std::vector<double>& getBiasGradients() const;
 
+    const std::string& getActivationName() const;
+
 private:
     int inputSize;
     int outputSize;
@@ -38,6 +40,7 @@ private:
     std::function<double(double)> activation;
     std::function<double(double)> activationDerivative;
     bool isSoftmax = false;
+    std::string activationName = "relu";
     void initializeWeights(unsigned int seed, const std::string& activationName);
 };
 

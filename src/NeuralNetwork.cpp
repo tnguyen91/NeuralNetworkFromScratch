@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <fstream>
+#include <cstdint>
 
 NeuralNetwork::NeuralNetwork() {
 }
@@ -180,6 +182,135 @@ double NeuralNetwork::evaluate(const std::vector<std::vector<double>>& inputs,
         }
     }
     return static_cast<double>(correctCount) / inputs.size();
+}
+
+void NeuralNetwork::save(const std::string& filename) const {
+    std::ofstream out(filename, std::ios::binary);
+    if (!out) {
+        throw std::runtime_error("Failed to open file for saving: " + filename);
+    }
+
+    int32_t num_layers = static_cast<int32_t>(layers.size());
+    out.write(reinterpret_cast<const char*>(&num_layers), sizeof(int32_t));
+
+    std::vector<int32_t> layer_sizes;
+    if (num_layers == 0) {
+        throw std::runtime_error("Cannot save: network has no layers.");
+    }
+    const DenseLayer* first = dynamic_cast<const DenseLayer*>(layers[0].get());
+    if (!first) throw std::runtime_error("Save only supports DenseLayer layers.");
+    layer_sizes.push_back(static_cast<int32_t>(first->getInputSize()));
+    for (const auto& layer_ptr : layers) {
+        const DenseLayer* dense = dynamic_cast<const DenseLayer*>(layer_ptr.get());
+        if (!dense) throw std::runtime_error("Save only supports DenseLayer layers.");
+        layer_sizes.push_back(static_cast<int32_t>(dense->getOutputSize()));
+    }
+    out.write(reinterpret_cast<const char*>(layer_sizes.data()), sizeof(int32_t) * layer_sizes.size());
+
+    // Write weights, biases, and activation name for each layer
+    for (const auto& layer_ptr : layers) {
+        DenseLayer* dense = dynamic_cast<DenseLayer*>(layer_ptr.get());
+        if (!dense) throw std::runtime_error("Save only supports DenseLayer layers.");
+        int32_t in_size = static_cast<int32_t>(dense->getInputSize());
+        int32_t out_size = static_cast<int32_t>(dense->getOutputSize());
+        out.write(reinterpret_cast<const char*>(&in_size), sizeof(int32_t));
+        out.write(reinterpret_cast<const char*>(&out_size), sizeof(int32_t));
+
+        const std::string& act = dense->getActivationName();
+        int32_t act_len = static_cast<int32_t>(act.size());
+        out.write(reinterpret_cast<const char*>(&act_len), sizeof(int32_t));
+        out.write(act.data(), act_len);
+
+        const auto& weights = dense->getWeights();
+        for (int i = 0; i < in_size; ++i) {
+            out.write(reinterpret_cast<const char*>(weights[i].data()), sizeof(double) * out_size);
+        }
+        const auto& biases = dense->getBiases();
+        out.write(reinterpret_cast<const char*>(biases.data()), sizeof(double) * out_size);
+    }
+
+    if (!out) {
+        throw std::runtime_error("Error occurred while writing to file: " + filename);
+    }
+    out.close();
+}
+
+void NeuralNetwork::load(const std::string& filename) {
+    std::ifstream in(filename, std::ios::binary);
+    if (!in) {
+        throw std::runtime_error("Failed to open file for loading: " + filename);
+    }
+
+    int32_t num_layers = 0;
+    in.read(reinterpret_cast<char*>(&num_layers), sizeof(int32_t));
+    if (!in || num_layers <= 0) {
+        throw std::runtime_error("Invalid or corrupt model file (num_layers).");
+    }
+
+    std::vector<int32_t> layer_sizes(num_layers + 1);
+    in.read(reinterpret_cast<char*>(layer_sizes.data()), sizeof(int32_t) * (num_layers + 1));
+    if (!in) {
+        throw std::runtime_error("Invalid or corrupt model file (layer_sizes).");
+    }
+
+    layers.clear();
+
+    for (int l = 0; l < num_layers; ++l) {
+        int32_t in_size = 0, out_size = 0;
+        in.read(reinterpret_cast<char*>(&in_size), sizeof(int32_t));
+        in.read(reinterpret_cast<char*>(&out_size), sizeof(int32_t));
+        if (!in || in_size != layer_sizes[l] || out_size != layer_sizes[l+1]) {
+            throw std::runtime_error("Model file mismatch or corrupt (layer size).");
+        }
+
+        int32_t act_len = 0;
+        in.read(reinterpret_cast<char*>(&act_len), sizeof(int32_t));
+        if (!in || act_len <= 0 || act_len > 100) {
+            throw std::runtime_error("Model file corrupt (activation name length).");
+        }
+        std::string act(act_len, '\0');
+        in.read(&act[0], act_len);
+        if (!in) {
+            throw std::runtime_error("Model file corrupt (activation name read).");
+        }
+
+        std::unique_ptr<DenseLayer> layer;
+        if (act == "relu") {
+            layer = std::make_unique<DenseLayer>(in_size, out_size,
+                [](double x) { return ActivationFunctions::relu(x); },
+                [](double x) { return ActivationFunctions::reluDerivative(x); },
+                "relu");
+        } else if (act == "sigmoid") {
+            layer = std::make_unique<DenseLayer>(in_size, out_size,
+                [](double x) { return ActivationFunctions::sigmoid(x); },
+                [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+                "sigmoid");
+        } else if (act == "softmax") {
+            layer = std::make_unique<DenseLayer>(in_size, out_size, true);
+        } else if (act == "linear") {
+            layer = std::make_unique<DenseLayer>(in_size, out_size,
+                [](double x) { return x; },
+                [](double /*y*/) { return 1.0; },
+                "linear");
+        } else {
+            throw std::runtime_error("Unsupported activation in model file: " + act);
+        }
+
+        std::vector<std::vector<double>>& weights = layer->getWeights();
+        for (int i = 0; i < in_size; ++i) {
+            in.read(reinterpret_cast<char*>(weights[i].data()), sizeof(double) * out_size);
+        }
+        std::vector<double>& biases = layer->getBiases();
+        in.read(reinterpret_cast<char*>(biases.data()), sizeof(double) * out_size);
+
+        if (!in) {
+            throw std::runtime_error("Model file corrupt (weights/biases).");
+        }
+
+        layers.push_back(std::move(layer));
+    }
+
+    in.close();
 }
 
 void NeuralNetwork::createLayers(const std::vector<int>& layerSizes,
