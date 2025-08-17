@@ -33,26 +33,35 @@ target_include_directories(NeuralNetworkLib
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTEST REQUIRED gtest>=1.10)
+pkg_check_modules(GTEST_MAIN REQUIRED gtest_main>=1.10)
+
 enable_testing()
 
 file(GLOB TEST_SOURCES "tests/*.cpp")
+
 foreach(test_file ${TEST_SOURCES})
     get_filename_component(test_name ${test_file} NAME_WE)
     
-    set(executable_name "run_${test_name}")
+    add_executable(${test_name} ${test_file})
     
-    add_executable(${executable_name} ${test_file})
+    target_link_libraries(${test_name} 
+        NeuralNetworkLib
+        ${GTEST_LIBRARIES}
+        ${GTEST_MAIN_LIBRARIES}
+        pthread
+    )
     
-    target_link_libraries(${executable_name} NeuralNetworkLib)
+    target_include_directories(${test_name} PRIVATE ${GTEST_INCLUDE_DIRS})
     
-    add_test(NAME ${test_name} COMMAND ${executable_name})
+    add_test(NAME ${test_name} COMMAND ${test_name})
     
-    message(STATUS "Added test: ${test_name} -> executable: ${executable_name}")
+    message(STATUS "Added test: ${test_name}")
 endforeach()
 
 add_custom_target(run_tests
     COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-    DEPENDS ${TEST_SOURCES}
     COMMENT "Running all tests"
 )
 
