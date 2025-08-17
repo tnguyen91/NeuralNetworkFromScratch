@@ -124,13 +124,10 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
             std::vector<double> gradients = lossDerivative(output, targets[i]);
 
             for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
-                auto weightGradients = (*it)->computeWeightGradients(gradients);
-                optimizer->updateWeights((*it)->getWeights(), weightGradients, learningRate);
-
-                auto biasGradients = (*it)->computeBiasGradients(gradients);
-                optimizer->updateBiases((*it)->getBiases(), biasGradients, learningRate);
-
                 gradients = (*it)->backward(gradients);
+                
+                optimizer->updateWeights((*it)->getWeights(), (*it)->getWeightGradients(), learningRate);
+                optimizer->updateBiases((*it)->getBiases(), (*it)->getBiasGradients(), learningRate);
             }
         }
 
