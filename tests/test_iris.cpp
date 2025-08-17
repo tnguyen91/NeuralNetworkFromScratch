@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include "../include/NeuralNetwork.h"
 #include "../include/DataLoader.h"
 
