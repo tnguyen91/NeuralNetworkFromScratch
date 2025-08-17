@@ -17,7 +17,7 @@ include_directories(include)
 
 set(LIBRARY_SOURCES
     src/ActivationFunctions.cpp
-    src/Layer.cpp
+    src/DenseLayer.cpp
     src/LossFunction.cpp
     src/NeuralNetwork.cpp
     src/SGD.cpp

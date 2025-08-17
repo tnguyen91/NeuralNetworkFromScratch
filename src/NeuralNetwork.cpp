@@ -1,5 +1,6 @@
 #include "../include/NeuralNetwork.h"
 #include "../include/ActivationFunctions.h"
+#include "../include/DenseLayer.h"
 #include "SGD.h"
 #include "Momentum.h"
 #include "Adam.h"
@@ -82,7 +83,7 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
         for (size_t i = 0; i < inputs.size(); ++i) {
             std::vector<double> output = inputs[i];
             for (auto& layer : layers) {
-                output = layer->forward(output);
+                output = layer->forward(output, true);
             }
 
             totalLoss += lossFunction(output, targets[i]);
@@ -91,8 +92,10 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
             for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
                 gradients = (*it)->backward(gradients);
                 
-                optimizer->updateWeights((*it)->getWeights(), (*it)->getWeightGradients(), learningRate);
-                optimizer->updateBiases((*it)->getBiases(), (*it)->getBiasGradients(), learningRate);
+                if (auto dense = dynamic_cast<DenseLayer*>(it->get())) {
+                    optimizer->updateWeights(dense->getWeights(), dense->getWeightGradients(), learningRate);
+                    optimizer->updateBiases(dense->getBiases(), dense->getBiasGradients(), learningRate);
+                }
             }
         }
 
@@ -113,7 +116,7 @@ std::vector<double> NeuralNetwork::predict(const std::vector<double>& input) {
     
     std::vector<double> output = input;
     for (auto& layer : layers) {
-        output = layer->forward(output);
+        output = layer->forward(output, false);
     }
     return output;
 }
@@ -201,12 +204,12 @@ std::unique_ptr<Layer> NeuralNetwork::createHiddenLayer(int inputSize, int outpu
                                                        const std::string& activation,
                                                        unsigned int seed) {
     if (activation == "relu") {
-        return std::make_unique<Layer>(inputSize, outputSize,
+        return std::make_unique<DenseLayer>(inputSize, outputSize,
             [](double x) { return ActivationFunctions::relu(x); },
             [](double x) { return ActivationFunctions::reluDerivative(x); },
             "relu", seed);
     } else if (activation == "sigmoid") {
-        return std::make_unique<Layer>(inputSize, outputSize,
+        return std::make_unique<DenseLayer>(inputSize, outputSize,
             [](double x) { return ActivationFunctions::sigmoid(x); },
             [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
             "sigmoid", seed);
@@ -219,19 +222,19 @@ std::unique_ptr<Layer> NeuralNetwork::createOutputLayer(int inputSize, int outpu
                                                        const std::string& activation,
                                                        unsigned int seed) {
     if (activation == "softmax") {
-        return std::make_unique<Layer>(inputSize, outputSize, true, seed);
+        return std::make_unique<DenseLayer>(inputSize, outputSize, true, seed);
     } else if (activation == "relu") {
-        return std::make_unique<Layer>(inputSize, outputSize,
+        return std::make_unique<DenseLayer>(inputSize, outputSize,
             [](double x) { return ActivationFunctions::relu(x); },
             [](double x) { return ActivationFunctions::reluDerivative(x); },
             "relu", seed);
     } else if (activation == "sigmoid") {
-        return std::make_unique<Layer>(inputSize, outputSize,
+        return std::make_unique<DenseLayer>(inputSize, outputSize,
             [](double x) { return ActivationFunctions::sigmoid(x); },
             [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
             "sigmoid", seed);
     } else if (activation == "linear") {
-        return std::make_unique<Layer>(inputSize, outputSize,
+        return std::make_unique<DenseLayer>(inputSize, outputSize,
             [](double x) { return x; },
             [](double /*y*/) { return 1.0; },
             "linear", seed);

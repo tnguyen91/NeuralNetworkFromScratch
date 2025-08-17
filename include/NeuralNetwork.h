@@ -1,11 +1,12 @@
 #ifndef NEURAL_NETWORK_H
 #define NEURAL_NETWORK_H
 
-#include "Layer.h"
+#include "DenseLayer.h"
 #include "LossFunction.h"
 #include "Optimizer.h"
 #include <vector>
 #include <memory>
+#include <functional>
 
 class NeuralNetwork {
 public:
