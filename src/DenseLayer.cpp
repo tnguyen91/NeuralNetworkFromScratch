@@ -1,5 +1,5 @@
-#include "../include/DenseLayer.h"
-#include "../include/ActivationFunctions.h"
+#include "DenseLayer.h"
+#include "ActivationFunctions.h"
 #include <random>
 #include <cmath>
 #include <cassert>

@@ -1,4 +1,4 @@
-#include "../include/ActivationFunctions.h"
+#include "ActivationFunctions.h"
 #include <limits>
 #include <algorithm>
 

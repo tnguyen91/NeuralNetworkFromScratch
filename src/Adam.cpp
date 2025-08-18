@@ -1,4 +1,4 @@
-#include "../include/Adam.h"
+#include "Adam.h"
 #include <cmath>
 
 Adam::Adam(double beta1, double beta2, double epsilon)

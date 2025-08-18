@@ -1,4 +1,4 @@
-#include "../include/SGD.h"
+#include "SGD.h"
 
 void SGD::updateWeights(std::vector<std::vector<double>>& weights,
                         const std::vector<std::vector<double>>& weightGradients,

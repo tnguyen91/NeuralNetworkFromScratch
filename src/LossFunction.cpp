@@ -1,4 +1,4 @@
-#include "../include/LossFunction.h"
+#include "LossFunction.h"
 #include <cmath>
 #include <algorithm>
 
