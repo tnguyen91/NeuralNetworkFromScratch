@@ -29,6 +29,13 @@ public:
                const std::vector<std::vector<double>>& targets,
                int epochs, double learningRate);
 
+    void train(const std::vector<std::vector<double>>& train_inputs,
+               const std::vector<std::vector<double>>& train_targets,
+               const std::vector<std::vector<double>>& val_inputs,
+               const std::vector<std::vector<double>>& val_targets,
+               int epochs, double learningRate,
+               class EarlyStopping& early_stopping);
+
     std::vector<double> predict(const std::vector<double>& input);
 
     void addLayer(std::unique_ptr<Layer> layer);

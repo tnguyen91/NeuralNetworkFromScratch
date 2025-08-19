@@ -1,4 +1,5 @@
 #include "NeuralNetwork.h"
+#include "EarlyStopping.h"
 #include "ActivationFunctions.h"
 #include "DenseLayer.h"
 #include "SGD.h"
@@ -101,8 +102,62 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
             }
         }
 
-        if (epoch % 100 == 0) {
-            std::cout << "Epoch " << epoch << ", Loss: " << totalLoss / inputs.size() << std::endl;
+        std::cout << "Epoch " << epoch << ", Loss: " << totalLoss / inputs.size() << std::endl;
+    }
+}
+
+void NeuralNetwork::train(const std::vector<std::vector<double>>& train_inputs,
+                          const std::vector<std::vector<double>>& train_targets,
+                          const std::vector<std::vector<double>>& val_inputs,
+                          const std::vector<std::vector<double>>& val_targets,
+                          int epochs, double learningRate,
+                          EarlyStopping& early_stopping) {
+    if (train_inputs.empty() || train_targets.empty()) {
+        throw std::invalid_argument("Training data cannot be empty");
+    }
+    if (train_inputs.size() != train_targets.size()) {
+        throw std::invalid_argument("Number of inputs must match number of targets");
+    }
+    if (epochs <= 0) {
+        throw std::invalid_argument("Number of epochs must be positive");
+    }
+    if (learningRate <= 0.0) {
+        throw std::invalid_argument("Learning rate must be positive");
+    }
+    if (layers.empty()) {
+        throw std::runtime_error("Network has no layers");
+    }
+    for (int epoch = 0; epoch < epochs; ++epoch) {
+        double totalLoss = 0.0;
+        for (size_t i = 0; i < train_inputs.size(); ++i) {
+            std::vector<double> output = train_inputs[i];
+            for (auto& layer : layers) {
+                output = layer->forward(output, true);
+            }
+            totalLoss += lossFunction(output, train_targets[i]);
+            std::vector<double> gradients = lossDerivative(output, train_targets[i]);
+            for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
+                gradients = (*it)->backward(gradients);
+                if (auto dense = dynamic_cast<DenseLayer*>(it->get())) {
+                    optimizer->updateWeights(dense->getWeights(), dense->getWeightGradients(), learningRate);
+                    optimizer->updateBiases(dense->getBiases(), dense->getBiasGradients(), learningRate);
+                }
+            }
+        }
+        double val_loss = 0.0;
+        for (size_t i = 0; i < val_inputs.size(); ++i) {
+            std::vector<double> output = val_inputs[i];
+            for (auto& layer : layers) {
+                output = layer->forward(output, false);
+            }
+            val_loss += lossFunction(output, val_targets[i]);
+        }
+        val_loss /= val_inputs.size();
+        std::cout << "Epoch " << epoch << ", Train Loss: " << totalLoss / train_inputs.size() << ", Val Loss: " << val_loss << std::endl;
+
+        if (early_stopping.should_stop(val_loss)) {
+            std::cout << "Early stopping at epoch " << epoch << std::endl;
+            break;
         }
     }
 }

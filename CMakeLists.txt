@@ -24,6 +24,7 @@ set(LIBRARY_SOURCES
     src/Momentum.cpp
     src/Adam.cpp
     src/DataLoader.cpp
+    src/EarlyStopping.cpp
 )
 
 add_library(NeuralNetworkLib STATIC ${LIBRARY_SOURCES})
