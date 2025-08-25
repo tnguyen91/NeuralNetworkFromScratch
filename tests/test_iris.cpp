@@ -2,16 +2,19 @@
 #include <algorithm>
 #include "../include/NeuralNetwork.h"
 #include "../include/DataLoader.h"
+#include "../include/EarlyStopping.h"
 
 TEST(IrisNeuralNetwork, LearnsIrisClassification) {
     auto dataset = DataLoader::loadIrisDataset();
-    DataLoader::Dataset trainSet, testSet;
-    DataLoader::trainTestSplit(dataset, trainSet, testSet, 0.2, 42);
+    DataLoader::Dataset trainSet, valSet, testSet;
+    DataLoader::trainValidationTestSplit(dataset, trainSet, valSet, testSet, 0.6, 0.2, 0.2, 42);
     DataLoader::normalizeFeatures(trainSet.inputs);
+    DataLoader::normalizeFeatures(valSet.inputs);
     DataLoader::normalizeFeatures(testSet.inputs);
-    std::vector<int> layers = {4, 10, 3};
-    NeuralNetwork net(layers, "relu", "softmax", "crossEntropy", "Adam", 42);
-    net.train(trainSet.inputs, trainSet.targets, 200, 0.001);
+    std::vector<int> layers = {4, 15, 3};
+    NeuralNetwork net(layers, "relu", "softmax", "crossEntropy", "SGD", 42);
+    EarlyStopping early_stopping(5);
+    net.train(trainSet.inputs, trainSet.targets, valSet.inputs, valSet.targets, 500, 0.01, early_stopping);
     int correct = 0;
     for (size_t i = 0; i < testSet.inputs.size(); ++i) {
         auto pred = net.predict(testSet.inputs[i]);
