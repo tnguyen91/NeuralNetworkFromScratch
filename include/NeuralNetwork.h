@@ -16,6 +16,7 @@ public:
                   const std::string& activationFunction,
                   const std::string& lossFunction,
                   const std::string& optimizer,
+                  double l2_lambda = 0.0,
                   unsigned int seed = 0);
 
     NeuralNetwork(const std::vector<int>& layerSizes,
@@ -23,6 +24,7 @@ public:
                   const std::string& outputActivation,
                   const std::string& lossFunction,
                   const std::string& optimizer,
+                  double l2_lambda = 0.0,
                   unsigned int seed = 0);
 
     void train(const std::vector<std::vector<double>>& inputs,
@@ -53,6 +55,7 @@ private:
     std::function<double(const std::vector<double>&, const std::vector<double>&)> lossFunction;
     std::function<std::vector<double>(const std::vector<double>&, const std::vector<double>&)> lossDerivative;
     std::unique_ptr<Optimizer> optimizer;
+    double l2_lambda_;
     
     void createLayers(const std::vector<int>& layerSizes,
                      const std::string& hiddenActivation,
@@ -60,8 +63,8 @@ private:
                      unsigned int seed);
     
     void setupLossFunction(const std::string& lossFunction);
-    void setupOptimizer(const std::string& optimizer);
-    
+    void setupOptimizer(const std::string& optimizer, double l2_lambda);
+
     std::unique_ptr<Layer> createHiddenLayer(int inputSize, int outputSize,
                                             const std::string& activation,
                                             unsigned int seed);

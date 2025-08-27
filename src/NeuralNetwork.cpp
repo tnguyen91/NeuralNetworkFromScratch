@@ -19,6 +19,7 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                              const std::string& activationFunction,
                              const std::string& lossFunction,
                              const std::string& optimizer,
+                             double l2_lambda,
                              unsigned int seed)
     : NeuralNetwork(
         layerSizes,
@@ -26,6 +27,7 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
         activationFunction == "softmax" ? "softmax" : activationFunction,
         lossFunction,
         optimizer,
+        l2_lambda,
         seed) {}
 
 NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
@@ -33,27 +35,22 @@ NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
                              const std::string& outputAct,
                              const std::string& lossFunction,
                              const std::string& optimizer,
+                             double l2_lambda,
                              unsigned int seed) {
-    
     if (layerSizes.size() < 2) {
         throw std::invalid_argument("Network must have at least 2 layers (input and output)");
     }
-    
     for (int size : layerSizes) {
         if (size <= 0) {
             throw std::invalid_argument("All layer sizes must be positive");
         }
     }
-    
     if (outputAct == "softmax" && lossFunction != "crossEntropy") {
         std::cerr << "Warning: using softmax output with non-crossEntropy loss.\n";
     }
-
     createLayers(layerSizes, hiddenAct, outputAct, seed);
-    
     setupLossFunction(lossFunction);
-    
-    setupOptimizer(optimizer);
+    setupOptimizer(optimizer, l2_lambda);
 }
 
 void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
@@ -441,13 +438,13 @@ void NeuralNetwork::setupLossFunction(const std::string& lossFunction) {
     }
 }
 
-void NeuralNetwork::setupOptimizer(const std::string& optimizer) {
+void NeuralNetwork::setupOptimizer(const std::string& optimizer, double l2_lambda) {
     if (optimizer == "SGD") {
-        this->optimizer = std::make_unique<SGD>();
+        this->optimizer = std::make_unique<SGD>(l2_lambda);
     } else if (optimizer == "Momentum") {
-        this->optimizer = std::make_unique<Momentum>(0.9);
+        this->optimizer = std::make_unique<Momentum>(0.9, l2_lambda);
     } else if (optimizer == "Adam") {
-        this->optimizer = std::make_unique<Adam>(0.9, 0.999, 1e-8);
+        this->optimizer = std::make_unique<Adam>(0.9, 0.999, 1e-8, l2_lambda);
     } else {
         throw std::invalid_argument("Unsupported optimizer: " + optimizer);
     }
