@@ -12,7 +12,7 @@ TEST(IrisNeuralNetwork, LearnsIrisClassification) {
     DataLoader::normalizeFeatures(valSet.inputs);
     DataLoader::normalizeFeatures(testSet.inputs);
     std::vector<int> layers = {4, 15, 3};
-    NeuralNetwork net(layers, "relu", "softmax", "crossEntropy", "SGD", 42);
+    NeuralNetwork net(layers, "relu", "softmax", "crossEntropy", "SGD", 0.0001, 42);
     EarlyStopping early_stopping(5);
     net.train(trainSet.inputs, trainSet.targets, valSet.inputs, valSet.targets, 500, 0.01, early_stopping);
     int correct = 0;
