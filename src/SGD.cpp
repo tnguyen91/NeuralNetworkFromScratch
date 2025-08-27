@@ -5,7 +5,8 @@ void SGD::updateWeights(std::vector<std::vector<double>>& weights,
                         double learningRate) {
     for (size_t i = 0; i < weights.size(); ++i) {
         for (size_t j = 0; j < weights[i].size(); ++j) {
-            weights[i][j] -= learningRate * weightGradients[i][j];
+            double grad = weightGradients[i][j] + l2_lambda_ * weights[i][j];
+            weights[i][j] -= learningRate * grad;
         }
     }
 }

@@ -1,7 +1,7 @@
 #include "Momentum.h"
 
-Momentum::Momentum(double momentum)
-    : momentum(momentum) {}
+Momentum::Momentum(double momentum, double l2_lambda)
+    : Optimizer(l2_lambda), momentum(momentum) {}
 
 void Momentum::updateWeights(std::vector<std::vector<double>>& weights,
                              const std::vector<std::vector<double>>& weightGradients,
@@ -17,7 +17,8 @@ void Momentum::updateWeights(std::vector<std::vector<double>>& weights,
 
     for (size_t i = 0; i < weights.size(); ++i) {
         for (size_t j = 0; j < weights[i].size(); ++j) {
-            weightVelocities[i][j] = momentum * weightVelocities[i][j] - learningRate * weightGradients[i][j];
+            double grad = weightGradients[i][j] + l2_lambda_ * weights[i][j];
+            weightVelocities[i][j] = momentum * weightVelocities[i][j] - learningRate * grad;
             weights[i][j] += weightVelocities[i][j];
         }
     }

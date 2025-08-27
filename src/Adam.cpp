@@ -1,8 +1,8 @@
 #include "Adam.h"
 #include <cmath>
 
-Adam::Adam(double beta1, double beta2, double epsilon)
-    : beta1(beta1), beta2(beta2), epsilon(epsilon), timeStep(0) {}
+Adam::Adam(double beta1, double beta2, double epsilon, double l2_lambda)
+    : beta1(beta1), beta2(beta2), epsilon(epsilon), Optimizer(l2_lambda), timeStep(0) {}
 
 void Adam::updateWeights(std::vector<std::vector<double>>& weights,
                          const std::vector<std::vector<double>>& weightGradients,
@@ -22,14 +22,11 @@ void Adam::updateWeights(std::vector<std::vector<double>>& weights,
 
     for (size_t i = 0; i < weights.size(); ++i) {
         for (size_t j = 0; j < weights[i].size(); ++j) {
-            mWeights[i][j] = beta1 * mWeights[i][j] + (1.0 - beta1) * weightGradients[i][j];
-            
-            vWeights[i][j] = beta2 * vWeights[i][j] + (1.0 - beta2) * weightGradients[i][j] * weightGradients[i][j];
-
+            double grad = weightGradients[i][j] + l2_lambda_ * weights[i][j];
+            mWeights[i][j] = beta1 * mWeights[i][j] + (1.0 - beta1) * grad;
+            vWeights[i][j] = beta2 * vWeights[i][j] + (1.0 - beta2) * grad * grad;
             double mHat = mWeights[i][j] / (1.0 - std::pow(beta1, timeStep));
-            
             double vHat = vWeights[i][j] / (1.0 - std::pow(beta2, timeStep));
-
             weights[i][j] -= learningRate * mHat / (std::sqrt(vHat) + epsilon);
         }
     }
