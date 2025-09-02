@@ -9,11 +9,9 @@
 class DenseLayer : public Layer {
 public:
     DenseLayer(int inputSize, int outputSize, unsigned int seed = 0);
-    DenseLayer(int inputSize, int outputSize, std::function<double(double)> activation,
-               std::function<double(double)> activationDerivative, unsigned int seed = 0);
-    DenseLayer(int inputSize, int outputSize, std::function<double(double)> activation,
-               std::function<double(double)> activationDerivative, const std::string& activationName,
-               unsigned int seed = 0);
+    
+    DenseLayer(int inputSize, int outputSize, const std::string& activationName, unsigned int seed = 0);
+    
     DenseLayer(int inputSize, int outputSize, bool useSoftmax, unsigned int seed = 0);
 
     std::vector<double> forward(const std::vector<double>& input, bool training) override;
@@ -37,6 +35,7 @@ private:
     std::vector<double> biasGradients;
     std::vector<double> inputs;
     std::vector<double> outputs;
+    std::vector<double> logits;
     std::function<double(double)> activation;
     std::function<double(double)> activationDerivative;
     bool isSoftmax = false;
