@@ -99,7 +99,9 @@ void NeuralNetwork::train(const std::vector<std::vector<double>>& inputs,
             }
         }
 
-        std::cout << "Epoch " << epoch << ", Loss: " << totalLoss / inputs.size() << std::endl;
+        if (epoch % 100 == 0 || epoch < 5) {
+            std::cout << "Epoch " << epoch << ", Loss: " << totalLoss / inputs.size() << std::endl;
+        }
     }
 }
 
@@ -335,7 +337,10 @@ void NeuralNetwork::load(const std::string& filename) {
         } else if (act == "sigmoid") {
             layer = std::make_unique<DenseLayer>(in_size, out_size,
                 [](double x) { return ActivationFunctions::sigmoid(x); },
-                [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+                [](double x) { 
+                    double sigmoid_out = ActivationFunctions::sigmoid(x);
+                    return ActivationFunctions::sigmoidDerivative(sigmoid_out);
+                },
                 "sigmoid");
         } else if (act == "softmax") {
             layer = std::make_unique<DenseLayer>(in_size, out_size, true);
@@ -394,7 +399,10 @@ std::unique_ptr<Layer> NeuralNetwork::createHiddenLayer(int inputSize, int outpu
     } else if (activation == "sigmoid") {
         return std::make_unique<DenseLayer>(inputSize, outputSize,
             [](double x) { return ActivationFunctions::sigmoid(x); },
-            [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+            [](double x) { 
+                double sigmoid_out = ActivationFunctions::sigmoid(x);
+                return ActivationFunctions::sigmoidDerivative(sigmoid_out);
+            },
             "sigmoid", seed);
     } else {
         throw std::invalid_argument("Unsupported hidden activation: " + activation);
@@ -414,7 +422,10 @@ std::unique_ptr<Layer> NeuralNetwork::createOutputLayer(int inputSize, int outpu
     } else if (activation == "sigmoid") {
         return std::make_unique<DenseLayer>(inputSize, outputSize,
             [](double x) { return ActivationFunctions::sigmoid(x); },
-            [](double y) { return ActivationFunctions::sigmoidDerivative(y); },
+            [](double x) { 
+                double sigmoid_out = ActivationFunctions::sigmoid(x);
+                return ActivationFunctions::sigmoidDerivative(sigmoid_out);
+            },
             "sigmoid", seed);
     } else if (activation == "linear") {
         return std::make_unique<DenseLayer>(inputSize, outputSize,
