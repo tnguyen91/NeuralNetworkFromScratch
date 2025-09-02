@@ -330,25 +330,13 @@ void NeuralNetwork::load(const std::string& filename) {
 
         std::unique_ptr<DenseLayer> layer;
         if (act == "relu") {
-            layer = std::make_unique<DenseLayer>(in_size, out_size,
-                [](double x) { return ActivationFunctions::relu(x); },
-                [](double x) { return ActivationFunctions::reluDerivative(x); },
-                "relu");
+            layer = std::make_unique<DenseLayer>(in_size, out_size, "relu");
         } else if (act == "sigmoid") {
-            layer = std::make_unique<DenseLayer>(in_size, out_size,
-                [](double x) { return ActivationFunctions::sigmoid(x); },
-                [](double x) { 
-                    double sigmoid_out = ActivationFunctions::sigmoid(x);
-                    return ActivationFunctions::sigmoidDerivative(sigmoid_out);
-                },
-                "sigmoid");
+            layer = std::make_unique<DenseLayer>(in_size, out_size, "sigmoid");
         } else if (act == "softmax") {
             layer = std::make_unique<DenseLayer>(in_size, out_size, true);
         } else if (act == "linear") {
-            layer = std::make_unique<DenseLayer>(in_size, out_size,
-                [](double x) { return x; },
-                [](double /*y*/) { return 1.0; },
-                "linear");
+            layer = std::make_unique<DenseLayer>(in_size, out_size, "linear");
         } else {
             throw std::runtime_error("Unsupported activation in model file: " + act);
         }
@@ -392,18 +380,9 @@ std::unique_ptr<Layer> NeuralNetwork::createHiddenLayer(int inputSize, int outpu
                                                        const std::string& activation,
                                                        unsigned int seed) {
     if (activation == "relu") {
-        return std::make_unique<DenseLayer>(inputSize, outputSize,
-            [](double x) { return ActivationFunctions::relu(x); },
-            [](double x) { return ActivationFunctions::reluDerivative(x); },
-            "relu", seed);
+        return std::make_unique<DenseLayer>(inputSize, outputSize, "relu", seed);
     } else if (activation == "sigmoid") {
-        return std::make_unique<DenseLayer>(inputSize, outputSize,
-            [](double x) { return ActivationFunctions::sigmoid(x); },
-            [](double x) { 
-                double sigmoid_out = ActivationFunctions::sigmoid(x);
-                return ActivationFunctions::sigmoidDerivative(sigmoid_out);
-            },
-            "sigmoid", seed);
+        return std::make_unique<DenseLayer>(inputSize, outputSize, "sigmoid", seed);
     } else {
         throw std::invalid_argument("Unsupported hidden activation: " + activation);
     }
@@ -415,23 +394,11 @@ std::unique_ptr<Layer> NeuralNetwork::createOutputLayer(int inputSize, int outpu
     if (activation == "softmax") {
         return std::make_unique<DenseLayer>(inputSize, outputSize, true, seed);
     } else if (activation == "relu") {
-        return std::make_unique<DenseLayer>(inputSize, outputSize,
-            [](double x) { return ActivationFunctions::relu(x); },
-            [](double x) { return ActivationFunctions::reluDerivative(x); },
-            "relu", seed);
+        return std::make_unique<DenseLayer>(inputSize, outputSize, "relu", seed);
     } else if (activation == "sigmoid") {
-        return std::make_unique<DenseLayer>(inputSize, outputSize,
-            [](double x) { return ActivationFunctions::sigmoid(x); },
-            [](double x) { 
-                double sigmoid_out = ActivationFunctions::sigmoid(x);
-                return ActivationFunctions::sigmoidDerivative(sigmoid_out);
-            },
-            "sigmoid", seed);
+        return std::make_unique<DenseLayer>(inputSize, outputSize, "sigmoid", seed);
     } else if (activation == "linear") {
-        return std::make_unique<DenseLayer>(inputSize, outputSize,
-            [](double x) { return x; },
-            [](double /*y*/) { return 1.0; },
-            "linear", seed);
+        return std::make_unique<DenseLayer>(inputSize, outputSize, "linear", seed);
     } else {
         throw std::invalid_argument("Unsupported output activation: " + activation);
     }
