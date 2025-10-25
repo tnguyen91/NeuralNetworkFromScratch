@@ -12,7 +12,7 @@
 #include <fstream>
 #include <cstdint>
 
-NeuralNetwork::NeuralNetwork() {
+NeuralNetwork::NeuralNetwork() : l2_lambda_(0.0) {
 }
 
 NeuralNetwork::NeuralNetwork(const std::vector<int>& layerSizes,
