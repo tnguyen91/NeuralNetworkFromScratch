@@ -18,15 +18,13 @@ void Adam::updateWeights(std::vector<std::vector<double>>& weights,
         }
     }
 
-    timeStep++;
-
     for (size_t i = 0; i < weights.size(); ++i) {
         for (size_t j = 0; j < weights[i].size(); ++j) {
             double grad = weightGradients[i][j] + l2_lambda_ * weights[i][j];
             mWeights[i][j] = beta1 * mWeights[i][j] + (1.0 - beta1) * grad;
             vWeights[i][j] = beta2 * vWeights[i][j] + (1.0 - beta2) * grad * grad;
-            double mHat = mWeights[i][j] / (1.0 - std::pow(beta1, timeStep));
-            double vHat = vWeights[i][j] / (1.0 - std::pow(beta2, timeStep));
+            double mHat = mWeights[i][j] / (1.0 - std::pow(beta1, timeStep + 1));
+            double vHat = vWeights[i][j] / (1.0 - std::pow(beta2, timeStep + 1));
             weights[i][j] -= learningRate * mHat / (std::sqrt(vHat) + epsilon);
         }
     }
@@ -47,10 +45,12 @@ void Adam::updateBiases(std::vector<double>& biases,
         
         vBiases[i] = beta2 * vBiases[i] + (1.0 - beta2) * biasGradients[i] * biasGradients[i];
 
-        double mHat = mBiases[i] / (1.0 - std::pow(beta1, timeStep));
+        double mHat = mBiases[i] / (1.0 - std::pow(beta1, timeStep + 1));
         
-        double vHat = vBiases[i] / (1.0 - std::pow(beta2, timeStep));
+        double vHat = vBiases[i] / (1.0 - std::pow(beta2, timeStep + 1));
 
         biases[i] -= learningRate * mHat / (std::sqrt(vHat) + epsilon);
     }
+    
+    timeStep++;
 }
